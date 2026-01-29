@@ -1,0 +1,228 @@
+181 Lotissement AMADL, Imsouane
+
+
+0525269382
+
+# ===================================
+# APPLICATION METADATA
+# ===================================
+spring.application.name=Hostel Management API
+
+# ===================================
+# DATABASE CONFIGURATION
+# ===================================
+spring.datasource.url=jdbc:postgresql://localhost:5432/hostel_management
+spring.datasource.username=postgres
+spring.datasource.password=admin
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# JPA/Hibernate Configuration
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.properties.hibernate.jdbc.time_zone=UTC
+spring.jpa.open-in-view=false
+
+# Connection Pool (HikariCP)
+spring.datasource.hikari.maximum-pool-size=10
+spring.datasource.hikari.minimum-idle=5
+spring.datasource.hikari.connection-timeout=30000
+
+# ===================================
+# SERVER CONFIGURATION
+# ===================================
+server.port=8080
+
+# ===================================
+# JWT CONFIGURATION
+# ===================================
+jwt.secret=5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437486A576E5A7234753778214125442A472D4B6150645367566B5970337336763979
+jwt.expiration=86400000
+
+# ===================================
+# EMAIL CONFIGURATION (Gmail)
+# ===================================
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=yassine.elkrik.65@edu.uiz.ac.ma
+spring.mail.password=zsxp jjsw zudm dtyu
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+spring.mail.properties.mail.smtp.starttls.required=true
+spring.mail.properties.mail.smtp.connectiontimeout=5000
+spring.mail.properties.mail.smtp.timeout=5000
+spring.mail.properties.mail.smtp.writetimeout=5000
+
+# ===================================
+# APPLICATION URL
+# ===================================
+app.base-url=http://localhost:5173
+
+# ===================================
+# HOSTEL CONFIGURATION
+# ===================================
+hostel.name=Shams House
+hostel.address=123 Beach Road, Imsouane, Morocco
+hostel.email=contact@shamshouse.com
+hostel.phone=+212 600 000 000
+hostel.default.door.code=1234
+hostel.checkin.24h=true
+hostel.checkin.instructions=Check-in disponible 24h/24. Utilisez votre code d'acces.
+hostel.checkout.time=12:00
+
+# ===================================
+# FILE UPLOAD CONFIGURATION
+# ===================================
+spring.servlet.multipart.enabled=true
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=100MB
+
+# ===================================
+# CLOUDINARY CONFIGURATION
+# ===================================
+cloudinary.cloud-name=dcdqr7ome
+cloudinary.api-key=376349516689289
+cloudinary.api-secret=GfqlApHNvZPIgaCxqlNe2gHKnRw
+
+# ===================================
+# LOGGING CONFIGURATION
+# ===================================
+logging.level.root=INFO
+logging.level.com.hostel.management=DEBUG
+logging.level.org.springframework.security=DEBUG
+logging.level.org.springframework.web=DEBUG
+logging.level.org.hibernate.SQL=DEBUG
+logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
+
+
+
+# ===================================
+# CONFIGURATION CORS
+# ===================================
+app.cors.allowed-origins=http://localhost:3000,http://localhost:5173,http://localhost:5174,http://127.0.0.1:3000,http://127.0.0.1:5173
+
+# Si ton frontend est sur un autre port, ajoute-le ici
+# Exemple : app.cors.allowed-origins=http://localhost:3000,http://localhost:8081
+
+
+
+
+api.js :
+import axios from 'axios';
+
+const API_BASE_URL = 'http://localhost:8080/api';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/admin/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// ===== AUTH API =====
+export const authAPI = {
+  login: (credentials) => api.post('/auth/login', credentials),
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (data) => api.post('/auth/reset-password', data),
+  changePassword: (data) => api.post('/auth/change-password', data),
+  getCurrentUser: () => api.get('/auth/me'),
+  changeEmail: (data) => api.post('/auth/change-email', data),
+};
+
+// ===== ROOMS API =====
+export const roomsAPI = {
+  getAll: () => api.get('/rooms'),
+  getById: (id) => api.get(`/rooms/${id}`),
+  getAvailable: (checkIn, checkOut) => 
+    api.get(`/rooms/available?checkIn=${checkIn}&checkOut=${checkOut}`),
+  uploadPhoto: (formData) => {
+    return api.post('/rooms/upload-photo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  },
+  createWithUrls: (data) => api.post('/rooms/create-with-urls', data),
+  update: (id, data) => api.put(`/admin/rooms/${id}`, data),
+  delete: (id) => api.delete(`/admin/rooms/${id}`),
+};
+
+// ===== SERVICES API =====
+export const servicesAPI = {
+  getAll: () => api.get('/services'),
+  getByCategory: (category) => api.get(`/services/category/${category}`),
+  create: (data) => api.post('/admin/services', data),
+  update: (id, data) => api.put(`/admin/services/${id}`, data),
+  delete: (id) => api.delete(`/admin/services/${id}`),
+};
+
+// ===== PACKS API =====
+export const packsAPI = {
+  getAll: () => api.get('/packs'),
+  getById: (id) => api.get(`/packs/${id}`),
+  create: (data) => api.post('/admin/packs', data),
+  update: (id, data) => api.put(`/admin/packs/${id}`, data),
+  delete: (id) => api.delete(`/admin/packs/${id}`),
+};
+
+// ===== BOOKINGS API =====
+export const bookingsAPI = {
+  // Endpoints publics (client)
+  create: (data) => api.post('/bookings', data),
+  getByReference: (reference) => api.get(`/bookings/reference/${reference}`),
+  
+  // Endpoints admin (nécessitent authentification)
+  getAll: () => api.get('/admin/bookings'),
+  getById: (id) => api.get(`/admin/bookings/${id}`),
+  getCheckIns: () => api.get('/admin/bookings/checkins'),
+  getCheckOuts: () => api.get('/admin/bookings/checkouts'),
+  updateStatus: (id, status) => 
+    api.put(`/admin/bookings/${id}/status?status=${status}`),
+  updatePayment: (id, paymentStatus) =>
+    api.put(`/admin/bookings/${id}/payment?paymentStatus=${paymentStatus}`),
+  cancel: (id) => api.delete(`/admin/bookings/${id}`),
+};
+
+// ===== SETTINGS API =====
+export const settingsAPI = {
+  // ✅ ENDPOINT PUBLIC (accessible sans authentification)
+  getSettings: () => api.get('/settings'),
+  
+  // Endpoints admin (nécessitent authentification)
+  get: () => api.get('/admin/settings'),
+  update: (data) => api.put('/admin/settings', data),
+  updateDoorCode: (newCode) => api.put('/admin/settings/door-code', null, {
+    params: { newCode }
+  }),
+};
+
+// ===== PUBLIC API =====
+export const publicAPI = {
+  getHostelInfo: () => api.get('/public/hostel-info'),
+  getPolicies: () => api.get('/public/policies'),
+};
+
+export default api;
