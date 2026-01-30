@@ -1,4 +1,5 @@
 import Hero from '../../components/home/Hero';
+import AboutShamsHouse from '../../components/home/AboutShamsHouse'; // ✅ Nouveau
 import FeaturedRooms from '../../components/home/FeaturedRooms';
 import FeaturedPacks from '../../components/home/FeaturedPacks';
 import ServicesSection from '../../components/home/ServicesSection';
@@ -10,7 +11,11 @@ const HomePage = () => {
     <div>
       <Hero />
       
-      {/* ✅ NOUVELLE SECTION : POURQUOI NOUS CHOISIR */}
+      {/* ✅ NOUVELLE SECTION : NOTRE HISTOIRE */}
+      <section id="about">
+        <AboutShamsHouse />
+      </section>
+      
       <WhyChooseUs />
       
       <section id="packs">
