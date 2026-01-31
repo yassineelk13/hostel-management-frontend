@@ -11,7 +11,7 @@ import { formatPrice } from '../../utils/priceFormatter';
 const BookingPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-
+  
   const packData = location.state;
   const isPack = packData?.isPack || false;
 
@@ -33,6 +33,11 @@ const BookingPage = () => {
   });
   const [bookingConfirmation, setBookingConfirmation] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // ✅ NOUVEAU : Scroll automatique en haut à chaque changement d'étape
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [step]);
 
   useEffect(() => {
     fetchServices();
