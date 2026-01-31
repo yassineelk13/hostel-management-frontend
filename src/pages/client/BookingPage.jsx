@@ -11,7 +11,7 @@ import { formatPrice } from '../../utils/priceFormatter';
 const BookingPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   const packData = location.state;
   const isPack = packData?.isPack || false;
 
@@ -56,7 +56,7 @@ const BookingPage = () => {
       const response = await roomsAPI.getAvailable(checkIn, checkOut);
       const filteredRooms = response.data.data.filter(room => room.roomType === roomType);
       setAvailableRooms(filteredRooms);
-      
+
       if (filteredRooms.length === 0) {
         alert('No rooms available for this package.');
         navigate('/packs');
@@ -120,7 +120,7 @@ const BookingPage = () => {
 
   const handleServiceToggle = (serviceId) => {
     if (isPack) return;
-    
+
     setFormData(prev => ({
       ...prev,
       serviceIds: prev.serviceIds.includes(serviceId)
@@ -135,13 +135,13 @@ const BookingPage = () => {
     }
 
     if (!selectedRoom) return 0;
-    
+
     const checkIn = new Date(formData.checkInDate);
     const checkOut = new Date(formData.checkOutDate);
     const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
-    
+
     const roomTotal = selectedRoom.pricePerNight * nights * formData.bedIds.length;
-    
+
     const servicesTotal = availableServices
       .filter(s => formData.serviceIds.includes(s.id))
       .reduce((sum, s) => {
@@ -150,13 +150,13 @@ const BookingPage = () => {
         }
         return sum + s.price;
       }, 0);
-    
+
     return roomTotal + servicesTotal;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (formData.bedIds.length === 0) {
       alert('Please select at least one bed');
       return;
@@ -190,19 +190,19 @@ const BookingPage = () => {
           <div className="absolute top-5 left-10 w-16 h-16 sm:w-24 sm:h-24 border-4 border-white rounded-full animate-pulse" />
           <div className="absolute bottom-5 right-20 w-20 h-20 sm:w-32 sm:h-32 border-4 border-white rounded-full animate-pulse" />
         </div>
-        
+
         <div className="container-custom relative z-10 text-center px-4 sm:px-6">
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-display font-bold mb-3 sm:mb-4 leading-tight pt-2 break-words">
             {isPack ? `Package Booking` : 'Booking'}
           </h1>
-          
+
           {isPack && (
             <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white/20 backdrop-blur-sm rounded-full text-xs sm:text-sm font-semibold break-words max-w-full">
               <FaBoxOpen className="flex-shrink-0" />
               <span className="truncate">{packData.packName}</span>
             </div>
           )}
-          
+
           {!isPack && (
             <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/90 max-w-2xl mx-auto break-words px-4">
               Book your stay in just a few clicks
@@ -263,25 +263,25 @@ const BookingPage = () => {
             <div className="flex items-center justify-between relative">
               {/* Ligne de progression */}
               <div className="absolute left-0 top-4 sm:top-5 w-full h-0.5 sm:h-1 bg-accent/30" style={{ zIndex: 0 }} />
-              <div 
-                className="absolute left-0 top-4 sm:top-5 h-0.5 sm:h-1 bg-primary transition-all duration-500" 
-                style={{ 
+              <div
+                className="absolute left-0 top-4 sm:top-5 h-0.5 sm:h-1 bg-primary transition-all duration-500"
+                style={{
                   width: `${((step - 1) / (steps.length - 1)) * 100}%`,
                   zIndex: 0
-                }} 
+                }}
               />
 
               {steps.map((s, index) => {
                 const Icon = s.icon;
                 const isActive = step >= s.number;
                 const isCurrent = step === s.number;
-                
+
                 return (
                   <div key={s.number} className="flex flex-col items-center relative" style={{ zIndex: 1 }}>
                     <div className={`
                       w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center mb-1 sm:mb-2 transition-all duration-300
-                      ${isActive 
-                        ? 'bg-primary text-white shadow-lg scale-110' 
+                      ${isActive
+                        ? 'bg-primary text-white shadow-lg scale-110'
                         : 'bg-white border-2 border-accent text-dark-light'}
                       ${isCurrent ? 'ring-2 sm:ring-4 ring-primary/30' : ''}
                     `}>
@@ -311,7 +311,7 @@ const BookingPage = () => {
                 Select your stay period in Imsouane
               </p>
             </div>
-            
+
             <form onSubmit={handleDateSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 <div>
@@ -329,7 +329,7 @@ const BookingPage = () => {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-xs sm:text-sm font-semibold text-dark mb-2 sm:mb-3 flex items-center gap-2">
                     <FaClock className="text-primary flex-shrink-0" />
@@ -358,7 +358,7 @@ const BookingPage = () => {
                   </div>
                 </div>
               )}
-              
+
               <Button type="submit" size="lg" className="w-full shadow-xl hover:shadow-2xl text-sm sm:text-base" disabled={loading}>
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -409,17 +409,17 @@ const BookingPage = () => {
               ) : (
                 <div className="space-y-3 sm:space-y-4">
                   {availableRooms.map((room) => (
-                    <Card 
-                      key={room.id} 
+                    <Card
+                      key={room.id}
                       className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-2 border-accent/30 hover:border-primary/50"
                     >
                       <div className="flex flex-col md:flex-row gap-4 sm:gap-6 p-4 sm:p-6">
                         <div className="w-full md:w-40 lg:w-48 h-40 sm:h-48 bg-gradient-warm rounded-xl flex-shrink-0 overflow-hidden">
                           {room.photos && room.photos[0] ? (
-                            <img 
-                              src={room.photos[0]} 
-                              alt={`Room ${room.roomNumber}`} 
-                              className="w-full h-full object-cover hover:scale-110 transition-transform duration-500" 
+                            <img
+                              src={room.photos[0]}
+                              alt={`Room ${room.roomNumber}`}
+                              className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
@@ -447,7 +447,7 @@ const BookingPage = () => {
                             </div>
                           </div>
                           <p className="text-dark-light text-xs sm:text-sm mb-3 sm:mb-4 leading-relaxed line-clamp-2">{room.description}</p>
-                          <Button 
+                          <Button
                             onClick={() => handleRoomSelect(room)}
                             className="w-full md:w-auto shadow-lg hover:shadow-xl text-sm sm:text-base"
                           >
@@ -483,15 +483,15 @@ const BookingPage = () => {
                 </div>
                 <div className="space-y-3 sm:space-y-4">
                   {availableRooms.map((room) => (
-                    <Card 
-                      key={room.id} 
+                    <Card
+                      key={room.id}
                       className="overflow-hidden hover:shadow-2xl transition-all border-2 border-accent/30 hover:border-primary/50"
                     >
                       <div className="flex flex-col md:flex-row gap-4 sm:gap-6 p-4 sm:p-6">
                         <div className="w-full md:w-40 lg:w-48 h-40 sm:h-48 bg-gradient-warm rounded-xl flex-shrink-0 overflow-hidden">
                           {room.photos && room.photos[0] ? (
-                            <img src={room.photos[0]} alt={`Room ${room.roomNumber}`} 
-                                 className="w-full h-full object-cover" />
+                            <img src={room.photos[0]} alt={`Room ${room.roomNumber}`}
+                              className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
                               <FaBed className="text-4xl sm:text-5xl text-white/30" />
@@ -558,7 +558,7 @@ const BookingPage = () => {
                     )}
                   </div>
                 </Card>
-                
+
                 <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
                   {/* Sélection lits */}
                   <div>
@@ -568,12 +568,12 @@ const BookingPage = () => {
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                       {selectedRoom.beds?.map((bed) => (
-                        <label 
-                          key={bed.id} 
+                        <label
+                          key={bed.id}
                           className={`
                             relative flex flex-col items-center justify-center p-4 sm:p-6 border-3 rounded-xl cursor-pointer transition-all
-                            ${formData.bedIds.includes(bed.id) 
-                              ? 'border-primary bg-primary/10 shadow-lg scale-105' 
+                            ${formData.bedIds.includes(bed.id)
+                              ? 'border-primary bg-primary/10 shadow-lg scale-105'
                               : 'border-accent hover:border-primary/50 hover:shadow-md'}
                           `}
                         >
@@ -588,12 +588,10 @@ const BookingPage = () => {
                               <FaCheckCircle className="text-xs sm:text-sm" />
                             </div>
                           )}
-                          <div className={`p-2 sm:p-3 rounded-xl mb-1 sm:mb-2 ${
-                            formData.bedIds.includes(bed.id) ? 'bg-primary' : 'bg-accent'
-                          }`}>
-                            <FaBed className={`text-xl sm:text-2xl ${
-                              formData.bedIds.includes(bed.id) ? 'text-white' : 'text-primary'
-                            }`} />
+                          <div className={`p-2 sm:p-3 rounded-xl mb-1 sm:mb-2 ${formData.bedIds.includes(bed.id) ? 'bg-primary' : 'bg-accent'
+                            }`}>
+                            <FaBed className={`text-xl sm:text-2xl ${formData.bedIds.includes(bed.id) ? 'text-white' : 'text-primary'
+                              }`} />
                           </div>
                           <div className="font-semibold text-dark text-xs sm:text-sm">Bed {bed.bedNumber}</div>
                         </label>
@@ -614,12 +612,12 @@ const BookingPage = () => {
                       </label>
                       <div className="space-y-2 sm:space-y-3">
                         {availableServices.map((service) => (
-                          <label 
-                            key={service.id} 
+                          <label
+                            key={service.id}
                             className={`
                               flex items-center gap-3 sm:gap-4 p-3 sm:p-4 border-2 rounded-xl transition-all
-                              ${formData.serviceIds.includes(service.id) 
-                                ? 'bg-primary/10 border-primary' 
+                              ${formData.serviceIds.includes(service.id)
+                                ? 'bg-primary/10 border-primary'
                                 : 'border-accent hover:bg-accent/20'}
                               ${isPack ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}
                             `}
@@ -655,7 +653,7 @@ const BookingPage = () => {
                       <FaUser className="text-primary flex-shrink-0" />
                       <span>Your Information</span>
                     </h3>
-                    
+
                     <div className="space-y-4 sm:space-y-6">
                       <div>
                         <label className="block text-xs sm:text-sm font-medium text-dark mb-2">
@@ -671,7 +669,7 @@ const BookingPage = () => {
                           required
                         />
                       </div>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                         <div>
                           <label className="block text-xs sm:text-sm font-medium text-dark mb-2">
@@ -690,7 +688,7 @@ const BookingPage = () => {
                             />
                           </div>
                         </div>
-                        
+
                         <div>
                           <label className="block text-xs sm:text-sm font-medium text-dark mb-2">
                             Phone <span className="text-red-500">*</span>
@@ -703,9 +701,12 @@ const BookingPage = () => {
                               value={formData.guestPhone}
                               onChange={handleChange}
                               placeholder="+212 6 12 34 56 78"
+                              pattern="^[+0-9][0-9\s\-().]{7,19}$"
+                              title="Entrez un numéro de téléphone valide (ex: +212 6 12 34 56 78)"
                               className="w-full pl-9 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border-2 border-accent rounded-xl focus:border-primary focus:outline-none transition-colors text-sm sm:text-base"
                               required
                             />
+
                           </div>
                         </div>
                       </div>
@@ -742,9 +743,9 @@ const BookingPage = () => {
                   {/* Boutons */}
                   <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                     {!isPack && (
-                      <Button 
-                        type="button" 
-                        variant="outline" 
+                      <Button
+                        type="button"
+                        variant="outline"
                         onClick={() => {
                           setStep(2);
                           setSelectedRoom(null);
@@ -755,8 +756,8 @@ const BookingPage = () => {
                         <span>Back</span>
                       </Button>
                     )}
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       disabled={loading || formData.bedIds.length === 0}
                       className={`${isPack ? 'w-full' : 'flex-1'} shadow-xl hover:shadow-2xl text-sm sm:text-base`}
                     >
@@ -785,11 +786,11 @@ const BookingPage = () => {
             <div className="inline-block p-6 sm:p-8 bg-gradient-to-br from-green-100 to-green-50 rounded-full mb-4 sm:mb-6 animate-bounce">
               <FaCheckCircle className="text-5xl sm:text-6xl md:text-7xl text-green-600" />
             </div>
-            
+
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-dark mb-3 sm:mb-4 break-words px-2">
               Booking Confirmed!
             </h2>
-            
+
             <p className="text-base sm:text-lg text-dark-light mb-6 sm:mb-8 break-words px-2">
               Your booking has been successfully registered
             </p>
