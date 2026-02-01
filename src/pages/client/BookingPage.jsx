@@ -806,10 +806,10 @@ const BookingPage = () => {
                   <div className="text-xs sm:text-sm text-dark-light mb-1 sm:mb-2">Booking Reference</div>
                   <div className="font-bold text-primary text-lg sm:text-xl md:text-2xl break-all">{bookingConfirmation.bookingReference}</div>
                 </div>
-                <div className="p-3 sm:p-4 bg-white rounded-xl">
+                {/* <div className="p-3 sm:p-4 bg-white rounded-xl">
                   <div className="text-xs sm:text-sm text-dark-light mb-1 sm:mb-2">Access Code</div>
                   <div className="font-bold text-primary text-lg sm:text-xl md:text-2xl">{bookingConfirmation.accessCode}</div>
-                </div>
+                </div> */}
                 <div className="p-3 sm:p-4 bg-white rounded-xl">
                   <div className="text-xs sm:text-sm text-dark-light mb-1 sm:mb-2">Name</div>
                   <div className="font-semibold text-dark text-sm sm:text-base break-words">{bookingConfirmation.guestName}</div>

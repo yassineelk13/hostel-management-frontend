@@ -147,7 +147,7 @@ const ContactSection = () => {
                 <FaWhatsapp className="text-xl sm:text-2xl" />
               </a>
               <a
-                href="https://instagram.com/shamshouse"
+                href="https://www.instagram.com/shams_housesurf/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-full transition-all duration-300 hover:scale-110 hover:shadow-xl"
@@ -155,7 +155,7 @@ const ContactSection = () => {
               >
                 <FaInstagram className="text-xl sm:text-2xl" />
               </a>
-              <a
+              {/* <a
                 href="https://facebook.com/shamshouse"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -163,7 +163,7 @@ const ContactSection = () => {
                 aria-label="Facebook"
               >
                 <FaFacebook className="text-xl sm:text-2xl" />
-              </a>
+              </a> */}
             </div>
           </Card>
         </div>

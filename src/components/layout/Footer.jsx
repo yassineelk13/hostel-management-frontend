@@ -70,14 +70,8 @@ const Footer = () => {
 
   const socialLinks = [
     { 
-      icon: FaFacebook, 
-      url: 'https://facebook.com/shamshouse',
-      color: 'hover:bg-blue-600',
-      label: 'Facebook'
-    },
-    { 
       icon: FaInstagram, 
-      url: 'https://instagram.com/shamshouse',
+      url: 'https://www.instagram.com/shams_housesurf/',
       color: 'hover:bg-gradient-to-br hover:from-purple-600 hover:to-pink-600',
       label: 'Instagram'
     },

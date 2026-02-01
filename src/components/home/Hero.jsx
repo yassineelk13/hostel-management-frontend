@@ -4,31 +4,34 @@ import { FaSun, FaWater, FaHeart, FaChevronLeft, FaChevronRight } from 'react-ic
 import Button from '../common/Button';
 
 
+
 const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+
 
   const slides = [
     {
       image: 'https://images.unsplash.com/photo-1502933691298-84fc14542831?q=80&w=2070',
       title: 'Surf Paradise',
-      subtitle: 'Les plus longues vagues d\'Afrique',
+      subtitle: 'Africa\'s longest waves',
     },
     {
       image: 'https://images.unsplash.com/photo-1505142468610-359e7d316be0?q=80&w=2126',
-      title: 'Plage de Rêve',
-      subtitle: 'Face à l\'océan Atlantique',
+      title: 'Dream Beach',
+      subtitle: 'Facing the Atlantic Ocean',
     },
     {
       image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=2070',
-      title: 'Yoga & Détente',
-      subtitle: 'Reconnectez avec vous-même',
+      title: 'Yoga & Relaxation',
+      subtitle: 'Reconnect with yourself',
     },
     {
       image: 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?q=80&w=2070',
-      title: 'Village Authentique',
-      subtitle: 'L\'esprit marocain traditionnel',
+      title: 'Authentic Village',
+      subtitle: 'Traditional Moroccan spirit',
     },
   ];
+
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -37,13 +40,16 @@ const Hero = () => {
     return () => clearInterval(timer);
   }, [slides.length]);
 
+
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % slides.length);
   };
 
+
   const prevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
   };
+
 
   return (
     <div className="relative h-screen overflow-hidden">
@@ -64,29 +70,30 @@ const Hero = () => {
         </div>
       ))}
 
-      {/* ✅ CONTENU - Padding augmenté pour éviter les flèches */}
+
+      {/* ✅ CONTENT - Increased padding to avoid arrows */}
       <div className="container-custom h-full relative z-20 flex items-center px-16 sm:px-6 md:px-8">
         <div className="max-w-3xl text-white animate-fade-in-up w-full">
           <div className="flex items-center gap-2 mb-3 md:mb-4">
             <FaHeart className="text-accent text-sm md:text-base" />
-            <span className="text-accent font-medium text-sm md:text-base">Bienvenue à Imsouane</span>
+            <span className="text-accent font-medium text-sm md:text-base">Welcome to Imsouane</span>
           </div>
-          
+
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-display font-bold mb-4 md:mb-6 leading-tight">
-            Votre Refuge<br />
-            <span className="text-accent">Entre Yoga & Surf</span>
+            Your Refuge<br />
+            <span className="text-accent">Between Yoga & Surf</span>
           </h1>
-          
+
           <p className="text-base sm:text-lg md:text-xl mb-6 md:mb-8 text-white/90 leading-relaxed max-w-2xl">
-            Découvrez Shams House, un hostel unique face à l'océan Atlantique.
-            Profitez de nos chambres confortables, sessions de yoga au lever du soleil
-            et des meilleures vagues du Maroc.
+            Discover Shams House, a unique hostel facing the Atlantic Ocean.
+            Enjoy our comfortable rooms, sunrise yoga sessions
+            and the best waves in Morocco.
           </p>
-          
+
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <Link to="/booking" className="w-full sm:w-auto">
               <Button size="lg" className="shadow-xl hover:shadow-2xl w-full sm:w-auto">
-                Réserver maintenant
+                Book now
               </Button>
             </Link>
             <Link to="/rooms" className="w-full sm:w-auto">
@@ -95,10 +102,11 @@ const Hero = () => {
                 size="lg" 
                 className="bg-white/10 backdrop-blur-sm border-white hover:bg-white hover:text-primary shadow-xl w-full sm:w-auto"
               >
-                Découvrir nos chambres
+                Discover our rooms
               </Button>
             </Link>
           </div>
+
 
           <div className="mt-8 md:mt-12 hidden sm:flex items-center gap-4">
             <div className="text-xs md:text-sm font-medium opacity-90">
@@ -108,7 +116,8 @@ const Hero = () => {
         </div>
       </div>
 
-      {/* ✅ NAVIGATION ARROWS - Plus petites et translucides sur mobile */}
+
+      {/* ✅ NAVIGATION ARROWS - Smaller and translucent on mobile */}
       <button
         onClick={prevSlide}
         className="absolute left-1 sm:left-4 top-1/2 -translate-y-1/2 z-30 bg-white/10 hover:bg-white/30 backdrop-blur-sm p-2 sm:p-4 rounded-full text-white transition-all touch-manipulation"
@@ -123,6 +132,7 @@ const Hero = () => {
       >
         <FaChevronRight className="text-sm sm:text-xl" />
       </button>
+
 
       {/* ✅ DOTS NAVIGATION */}
       <div className="absolute bottom-20 sm:bottom-8 left-1/2 -translate-x-1/2 z-30 flex gap-2 sm:gap-3">
@@ -140,6 +150,7 @@ const Hero = () => {
         ))}
       </div>
 
+
       {/* ✅ SCROLL INDICATOR */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 animate-bounce hidden md:block">
         <div className="flex flex-col items-center gap-2 text-white/70">
@@ -147,6 +158,7 @@ const Hero = () => {
           <div className="w-px h-12 bg-gradient-to-b from-white/70 to-transparent" />
         </div>
       </div>
+
 
       {/* ✅ WAVE DIVIDER */}
       <div className="absolute bottom-0 left-0 w-full z-20">
@@ -160,5 +172,6 @@ const Hero = () => {
     </div>
   );
 };
+
 
 export default Hero;
