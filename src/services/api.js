@@ -1,10 +1,13 @@
 import axios from 'axios';
 
+
 // ✅ Utilise la variable d'environnement
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
 
+
 console.log('🚀 API URL:', API_BASE_URL); // Pour debug (à retirer en prod si tu veux)
+
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -13,6 +16,7 @@ const api = axios.create({
   },
   timeout: 15000, // ✅ Timeout de 15 secondes
 });
+
 
 api.interceptors.request.use(
   (config) => {
@@ -25,6 +29,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -36,6 +41,7 @@ api.interceptors.response.use(
   }
 );
 
+
 // ===== AUTH API =====
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
@@ -45,6 +51,7 @@ export const authAPI = {
   getCurrentUser: () => api.get('/auth/me'),
   changeEmail: (data) => api.post('/auth/change-email', data),
 };
+
 
 // ===== ROOMS API =====
 export const roomsAPI = {
@@ -64,6 +71,7 @@ export const roomsAPI = {
   delete: (id) => api.delete(`/admin/rooms/${id}`),
 };
 
+
 // ===== SERVICES API =====
 export const servicesAPI = {
   getAll: () => api.get('/services'),
@@ -73,14 +81,17 @@ export const servicesAPI = {
   delete: (id) => api.delete(`/admin/services/${id}`),
 };
 
+
 // ===== PACKS API =====
 export const packsAPI = {
   getAll: () => api.get('/packs'),
   getById: (id) => api.get(`/packs/${id}`),
   create: (data) => api.post('/admin/packs', data),
   update: (id, data) => api.put(`/admin/packs/${id}`, data),
-  delete: (id) => api.delete(`/admin/packs/${id}`),
+  delete: (id) => api.delete(`/admin/packs/${id}`), // ✅ Soft delete (désactivation)
+  deletePermanently: (id) => api.delete(`/admin/packs/${id}/permanent`), // ✅✅ NOUVEAU : Hard delete
 };
+
 
 // ===== BOOKINGS API =====
 export const bookingsAPI = {
@@ -100,6 +111,7 @@ export const bookingsAPI = {
   cancel: (id) => api.delete(`/admin/bookings/${id}`),
 };
 
+
 // ===== SETTINGS API =====
 export const settingsAPI = {
   // ✅ ENDPOINT PUBLIC (accessible sans authentification)
@@ -113,10 +125,12 @@ export const settingsAPI = {
   }),
 };
 
+
 // ===== PUBLIC API =====
 export const publicAPI = {
   getHostelInfo: () => api.get('/public/hostel-info'),
   getPolicies: () => api.get('/public/policies'),
 };
+
 
 export default api;

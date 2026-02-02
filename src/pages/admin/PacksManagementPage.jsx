@@ -186,24 +186,46 @@ const PacksManagementPage = () => {
   };
 
 
-  const handleDeleteConfirm = async () => {
-    if (!packToDelete) return;
+  // ✅ Option 1: Deactivate (Soft Delete)
+const handleDeactivateConfirm = async () => {
+  if (!packToDelete) return;
 
-    setDeleting(true); // ✅ Active le chargement
+  setDeleting(true);
 
-    try {
-      await packsAPI.delete(packToDelete.id);
-      toast.success('✅ Package deactivated successfully!');
-      setShowDeleteConfirm(false);
-      setPackToDelete(null);
-      fetchData();
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('❌ Error deleting package');
-    } finally {
-      setDeleting(false); // ✅ Désactive le chargement
-    }
-  };
+  try {
+    await packsAPI.delete(packToDelete.id); // Soft delete
+    toast.success('✅ Package deactivated successfully!');
+    setShowDeleteConfirm(false);
+    setPackToDelete(null);
+    fetchData();
+  } catch (error) {
+    console.error('Error:', error);
+    toast.error('❌ Error deactivating package');
+  } finally {
+    setDeleting(false);
+  }
+};
+
+// ✅ Option 2: Delete Permanently (Hard Delete)
+const handlePermanentDeleteConfirm = async () => {
+  if (!packToDelete) return;
+
+  setDeleting(true);
+
+  try {
+    await packsAPI.deletePermanently(packToDelete.id); // Hard delete
+    toast.success('🗑️ Package deleted permanently!');
+    setShowDeleteConfirm(false);
+    setPackToDelete(null);
+    fetchData();
+  } catch (error) {
+    console.error('Error:', error);
+    toast.error('❌ Error deleting package permanently');
+  } finally {
+    setDeleting(false);
+  }
+};
+
 
 
   const handleCancelDelete = () => {
@@ -746,59 +768,124 @@ const PacksManagementPage = () => {
       </Modal>
 
 
-      {/* ✅ Delete Confirmation Modal AVEC LOADING */}
-      <Modal
-        isOpen={showDeleteConfirm}
-        onClose={handleCancelDelete}
-        title="⚠️ Deactivate Package"
-      >
-        <div className="text-center py-4 sm:py-6">
-          <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center mb-4 sm:mb-6 animate-pulse">
-            <FaExclamationTriangle className="text-3xl sm:text-4xl text-orange-600" />
-          </div>
-          <h3 className="text-xl sm:text-2xl font-bold text-dark mb-2 sm:mb-3 break-words px-2">
-            Deactivate "{packToDelete?.name}"?
-          </h3>
-          <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-3 sm:p-4 mb-3 sm:mb-4">
-            <p className="text-xs sm:text-sm text-dark-light break-words">
-              The package will no longer be visible on the public website
-            </p>
-            <p className="text-xs sm:text-sm font-semibold text-orange-700 mt-2">
-              💡 You can reactivate it later
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-            <Button
-              variant="outline"
-              onClick={handleCancelDelete}
-              className="flex-1 border-2 text-sm sm:text-base"
-              disabled={deleting}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleDeleteConfirm}
-              className={`flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg text-sm sm:text-base ${deleting ? 'opacity-75 cursor-not-allowed' : ''}`}
-              disabled={deleting}
-            >
-              {deleting ? (
-                <>
-                  <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5 text-white flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>Deactivating...</span>
-                </>
-              ) : (
-                <>
-                  <FaTrash className="flex-shrink-0" />
-                  <span>Deactivate</span>
-                </>
-              )}
-            </Button>
-          </div>
+     {/* ✅✅ NOUVEAU Modal de confirmation avec 2 options */}
+<Modal
+  isOpen={showDeleteConfirm}
+  onClose={handleCancelDelete}
+  title={
+    <div className="flex items-center gap-3">
+      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-100 to-red-200 flex items-center justify-center animate-pulse">
+        <FaExclamationTriangle className="text-2xl text-orange-600" />
+      </div>
+      <span className="text-lg">Delete Package</span>
+    </div>
+  }
+>
+  <div className="space-y-4 py-4">
+    {/* Package Info */}
+    <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4">
+      <h3 className="text-lg font-bold text-dark mb-1 line-clamp-1">
+        {packToDelete?.name}
+      </h3>
+      <p className="text-sm text-dark-light">
+        Choose how you want to handle this package
+      </p>
+    </div>
+
+    {/* Option 1: Deactivate (Soft Delete) */}
+    <Card className="p-4 border-2 border-orange-300 hover:border-orange-400 transition-all cursor-pointer group">
+      <div className="flex items-start gap-4">
+        <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+          <FaTimesCircle className="text-xl text-orange-600" />
         </div>
-      </Modal>
+        <div className="flex-1 min-w-0">
+          <h4 className="font-bold text-dark mb-1 flex items-center gap-2">
+            <span>Deactivate</span>
+            <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold">
+              RECOMMENDED
+            </span>
+          </h4>
+          <p className="text-xs text-dark-light mb-3 leading-relaxed">
+            Hide the package from public view. You can reactivate it later.
+          </p>
+          <Button
+            onClick={handleDeactivateConfirm}
+            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg text-sm"
+            disabled={deleting}
+          >
+            {deleting ? (
+              <>
+                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Deactivating...</span>
+              </>
+            ) : (
+              <>
+                <FaTimesCircle />
+                <span>Deactivate Package</span>
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    </Card>
+
+    {/* Option 2: Delete Permanently (Hard Delete) */}
+    <Card className="p-4 border-2 border-red-300 hover:border-red-400 transition-all cursor-pointer group">
+      <div className="flex items-start gap-4">
+        <div className="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+          <FaTrash className="text-xl text-red-600" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className="font-bold text-dark mb-1 flex items-center gap-2">
+            <span>Delete Permanently</span>
+            <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">
+              IRREVERSIBLE
+            </span>
+          </h4>
+          <p className="text-xs text-dark-light mb-3 leading-relaxed">
+            <strong className="text-red-600">⚠️ Warning:</strong> This will permanently delete all data including photos from Cloudinary. This action cannot be undone!
+          </p>
+          <Button
+            onClick={handlePermanentDeleteConfirm}
+            className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg text-sm"
+            disabled={deleting}
+          >
+            {deleting ? (
+              <>
+                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Deleting permanently...</span>
+              </>
+            ) : (
+              <>
+                <FaTrash />
+                <span>Delete Permanently</span>
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    </Card>
+
+    {/* Cancel Button */}
+    <div className="flex justify-center pt-2 border-t-2 border-gray-100">
+      <Button
+        variant="outline"
+        onClick={handleCancelDelete}
+        className="w-full border-2 text-sm"
+        disabled={deleting}
+      >
+        Cancel
+      </Button>
+    </div>
+  </div>
+</Modal>
+
 
 
       {/* Toast Container */}
