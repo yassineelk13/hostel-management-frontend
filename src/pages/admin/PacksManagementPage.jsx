@@ -11,11 +11,13 @@ import { formatPrice } from '../../utils/priceFormatter';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+
 const PacksManagementPage = () => {
   const [packs, setPacks] = useState([]);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false); // ✅ État de chargement pour delete
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [showModal, setShowModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -32,9 +34,11 @@ const PacksManagementPage = () => {
     photos: []
   });
 
+
   useEffect(() => {
     fetchData();
   }, []);
+
 
   const fetchData = async () => {
     try {
@@ -52,6 +56,7 @@ const PacksManagementPage = () => {
     }
   };
 
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -59,12 +64,14 @@ const PacksManagementPage = () => {
     });
   };
 
+
   const handlePhotosChange = (photos) => {
     setFormData({
       ...formData,
       photos: photos
     });
   };
+
 
   const handleServiceToggle = (serviceId) => {
     setFormData(prev => ({
@@ -75,15 +82,17 @@ const PacksManagementPage = () => {
     }));
   };
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setUploading(true);
-    
+
     if (formData.originalPrice && parseFloat(formData.promoPrice) >= parseFloat(formData.originalPrice)) {
       toast.error('❌ Promo price must be lower than regular price!');
       setUploading(false);
       return;
     }
+
 
     if (formData.serviceIds.length === 0) {
       toast.error('❌ Select at least one service!');
@@ -91,20 +100,22 @@ const PacksManagementPage = () => {
       return;
     }
 
+
     try {
       let photoUrls = [];
 
+
       if (!editingPack && formData.photos.length > 0 && formData.photos[0] instanceof File) {
         setUploadProgress({ current: 0, total: formData.photos.length });
-        
+
         for (let i = 0; i < formData.photos.length; i++) {
           const file = formData.photos[i];
           const photoFormData = new FormData();
           photoFormData.append('photo', file);
-          
+
           try {
             const response = await roomsAPI.uploadPhoto(photoFormData);
-            
+
             if (response.data.success) {
               photoUrls.push(response.data.data);
               setUploadProgress({ current: i + 1, total: formData.photos.length });
@@ -118,6 +129,7 @@ const PacksManagementPage = () => {
         photoUrls = formData.photos.filter(p => typeof p === 'string');
       }
 
+
       const dataToSend = {
         name: formData.name,
         description: formData.description,
@@ -129,6 +141,7 @@ const PacksManagementPage = () => {
         includedServiceIds: formData.serviceIds
       };
 
+
       if (editingPack) {
         await packsAPI.update(editingPack.id, dataToSend);
         toast.success('✅ Package updated successfully!');
@@ -137,9 +150,10 @@ const PacksManagementPage = () => {
         toast.success('✅ Package created successfully!');
       }
 
+
       handleCloseModal();
       fetchData();
-      
+
     } catch (error) {
       console.error('Error:', error);
       toast.error(`❌ ${error.response?.data?.message || 'Error saving package'}`);
@@ -148,6 +162,7 @@ const PacksManagementPage = () => {
       setUploadProgress({ current: 0, total: 0 });
     }
   };
+
 
   const handleEdit = (pack) => {
     setEditingPack(pack);
@@ -164,13 +179,17 @@ const PacksManagementPage = () => {
     setShowModal(true);
   };
 
+
   const handleDeleteClick = (pack) => {
     setPackToDelete(pack);
     setShowDeleteConfirm(true);
   };
 
+
   const handleDeleteConfirm = async () => {
     if (!packToDelete) return;
+
+    setDeleting(true); // ✅ Active le chargement
 
     try {
       await packsAPI.delete(packToDelete.id);
@@ -181,8 +200,18 @@ const PacksManagementPage = () => {
     } catch (error) {
       console.error('Error:', error);
       toast.error('❌ Error deleting package');
+    } finally {
+      setDeleting(false); // ✅ Désactive le chargement
     }
   };
+
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setPackToDelete(null);
+    setDeleting(false); // ✅ Réinitialise l'état
+  };
+
 
   const handleReactivate = async (id) => {
     try {
@@ -194,6 +223,7 @@ const PacksManagementPage = () => {
       toast.error('❌ Error reactivating package');
     }
   };
+
 
   const handleCloseModal = () => {
     setShowModal(false);
@@ -210,13 +240,16 @@ const PacksManagementPage = () => {
     });
   };
 
+
   const calculateEconomies = (original, promo) => {
     return original - promo;
   };
 
+
   const calculateDiscount = (original, promo) => {
     return Math.round((1 - promo / original) * 100);
   };
+
 
   const getRoomTypeLabel = (type) => {
     const labels = {
@@ -227,6 +260,7 @@ const PacksManagementPage = () => {
     return labels[type] || type;
   };
 
+
   const getRoomTypeColor = (type) => {
     const colors = {
       SINGLE: 'bg-blue-500',
@@ -236,14 +270,17 @@ const PacksManagementPage = () => {
     return colors[type] || 'bg-gray-500';
   };
 
+
   const activePacks = packs.filter(p => p.isActive !== false);
   const inactivePacks = packs.filter(p => p.isActive === false);
 
+
   if (loading) return <Loader />;
+
 
   return (
     <div className="space-y-4 sm:space-y-6 p-3 sm:p-4 md:p-6 animate-fade-in">
-      {/* ✅ Header responsive + Anglais */}
+      {/* Header responsive */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 sm:gap-6">
         <div className="flex-1 min-w-0">
           <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-display font-bold text-dark mb-2 flex items-center gap-2 sm:gap-3">
@@ -264,6 +301,7 @@ const PacksManagementPage = () => {
           </div>
         </div>
 
+
         {/* Quick Stats */}
         <Card className="p-3 sm:p-4 border-2 border-pink-200 bg-gradient-to-br from-pink-50 to-rose-100 min-w-[120px] sm:min-w-[140px] flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-3">
@@ -278,7 +316,8 @@ const PacksManagementPage = () => {
         </Card>
       </div>
 
-      {/* ✅ Add button responsive */}
+
+      {/* Add button */}
       <div className="flex justify-end">
         <Button 
           onClick={() => setShowModal(true)}
@@ -289,7 +328,8 @@ const PacksManagementPage = () => {
         </Button>
       </div>
 
-      {/* ✅ Packs Grid responsive */}
+
+      {/* Packs Grid */}
       {packs.length === 0 ? (
         <Card className="p-8 sm:p-12 md:p-16 text-center border-2 border-dashed border-gray-300">
           <div className="flex flex-col items-center gap-4 sm:gap-6 animate-fade-in">
@@ -310,7 +350,7 @@ const PacksManagementPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {packs.map((pack, index) => {
             const discount = pack.originalPrice ? calculateDiscount(pack.originalPrice, pack.promoPrice) : 0;
-            
+
             return (
               <Card 
                 key={pack.id} 
@@ -333,6 +373,7 @@ const PacksManagementPage = () => {
                   </div>
                 )}
 
+
                 {/* Image */}
                 <div className="relative h-48 sm:h-56 bg-gradient-to-br from-pink-100 via-rose-100 to-orange-100 overflow-hidden">
                   {pack.photos && pack.photos.length > 0 ? (
@@ -346,7 +387,7 @@ const PacksManagementPage = () => {
                       <FaBoxOpen className="text-5xl sm:text-7xl text-pink-300" />
                     </div>
                   )}
-                  
+
                   {/* Discount badge */}
                   {pack.originalPrice && pack.isActive !== false && (
                     <div className="absolute top-3 sm:top-4 right-3 sm:right-4">
@@ -359,6 +400,7 @@ const PacksManagementPage = () => {
                     </div>
                   )}
 
+
                   {/* Room type badge */}
                   <div className="absolute top-3 sm:top-4 left-3 sm:left-4">
                     <span className={`inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 ${getRoomTypeColor(pack.roomType)} text-white rounded-full text-[10px] sm:text-xs font-bold shadow-lg`}>
@@ -366,6 +408,7 @@ const PacksManagementPage = () => {
                       <span className="hidden xs:inline">{getRoomTypeLabel(pack.roomType)}</span>
                     </span>
                   </div>
+
 
                   {/* Duration badge */}
                   <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4">
@@ -375,14 +418,14 @@ const PacksManagementPage = () => {
                     </span>
                   </div>
                 </div>
-                
+
                 {/* Content */}
                 <div className="p-4 sm:p-6">
                   <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-dark mb-2 sm:mb-3 line-clamp-2 break-words">{pack.name}</h3>
                   <p className="text-dark-light text-xs sm:text-sm mb-4 sm:mb-5 line-clamp-2 leading-relaxed">
                     {pack.description}
                   </p>
-                  
+
                   {/* Price Card */}
                   <Card className="p-3 sm:p-4 mb-4 sm:mb-5 bg-gradient-to-br from-pink-50 to-rose-50 border-2 border-pink-200">
                     {pack.originalPrice && (
@@ -404,6 +447,7 @@ const PacksManagementPage = () => {
                       </div>
                     )}
                   </Card>
+
 
                   {/* Services */}
                   {pack.includedServices && pack.includedServices.length > 0 && (
@@ -427,6 +471,7 @@ const PacksManagementPage = () => {
                     </div>
                   )}
 
+
                   {/* Actions */}
                   <div className="flex gap-2 sm:gap-3">
                     <Button 
@@ -438,7 +483,7 @@ const PacksManagementPage = () => {
                       <FaEdit className="flex-shrink-0" />
                       <span className="hidden xs:inline ml-1">Edit</span>
                     </Button>
-                    
+
                     {pack.isActive === false ? (
                       <Button 
                         size="sm" 
@@ -466,7 +511,8 @@ const PacksManagementPage = () => {
         </div>
       )}
 
-      {/* ✅ Add/Edit Modal - Responsive + Anglais */}
+
+      {/* Add/Edit Modal */}
       <Modal
         isOpen={showModal}
         onClose={handleCloseModal}
@@ -493,6 +539,7 @@ const PacksManagementPage = () => {
               acceptFiles={!editingPack}
             />
           </div>
+
 
           {/* Upload Progress */}
           {uploading && uploadProgress.total > 0 && (
@@ -525,6 +572,7 @@ const PacksManagementPage = () => {
             </Card>
           )}
 
+
           {/* Form Fields */}
           <Input
             label="Package Name"
@@ -534,6 +582,7 @@ const PacksManagementPage = () => {
             placeholder="Relax & Surf Package"
             required
           />
+
 
           <div>
             <label className="block text-xs sm:text-sm font-bold text-dark mb-2">
@@ -549,6 +598,7 @@ const PacksManagementPage = () => {
               required
             ></textarea>
           </div>
+
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <Input
@@ -582,6 +632,7 @@ const PacksManagementPage = () => {
             />
           </div>
 
+
           <div>
             <label className="block text-xs sm:text-sm font-bold text-dark mb-2">
               Room Type <span className="text-red-500">*</span>
@@ -598,6 +649,7 @@ const PacksManagementPage = () => {
               <option value="DORTOIR">🏠 Dormitory</option>
             </select>
           </div>
+
 
           {/* Savings Preview */}
           {formData.originalPrice && formData.promoPrice && parseFloat(formData.promoPrice) < parseFloat(formData.originalPrice) && (
@@ -617,6 +669,7 @@ const PacksManagementPage = () => {
               </div>
             </Card>
           )}
+
 
           {/* Services Selection */}
           <div>
@@ -659,6 +712,7 @@ const PacksManagementPage = () => {
             )}
           </div>
 
+
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 border-t-2 border-gray-100">
             <Button 
@@ -691,13 +745,11 @@ const PacksManagementPage = () => {
         </form>
       </Modal>
 
-      {/* ✅ Delete Confirmation Modal - Responsive + Anglais */}
+
+      {/* ✅ Delete Confirmation Modal AVEC LOADING */}
       <Modal
         isOpen={showDeleteConfirm}
-        onClose={() => {
-          setShowDeleteConfirm(false);
-          setPackToDelete(null);
-        }}
+        onClose={handleCancelDelete}
         title="⚠️ Deactivate Package"
       >
         <div className="text-center py-4 sm:py-6">
@@ -718,24 +770,36 @@ const PacksManagementPage = () => {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <Button
               variant="outline"
-              onClick={() => {
-                setShowDeleteConfirm(false);
-                setPackToDelete(null);
-              }}
+              onClick={handleCancelDelete}
               className="flex-1 border-2 text-sm sm:text-base"
+              disabled={deleting}
             >
               Cancel
             </Button>
             <Button
               onClick={handleDeleteConfirm}
-              className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg text-sm sm:text-base"
+              className={`flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg text-sm sm:text-base ${deleting ? 'opacity-75 cursor-not-allowed' : ''}`}
+              disabled={deleting}
             >
-              <FaTrash className="flex-shrink-0" />
-              <span>Deactivate</span>
+              {deleting ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5 text-white flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Deactivating...</span>
+                </>
+              ) : (
+                <>
+                  <FaTrash className="flex-shrink-0" />
+                  <span>Deactivate</span>
+                </>
+              )}
             </Button>
           </div>
         </div>
       </Modal>
+
 
       {/* Toast Container */}
       <ToastContainer 
@@ -747,6 +811,7 @@ const PacksManagementPage = () => {
         draggable
         theme="light"
       />
+
 
       <style jsx>{`
         @keyframes slideUp {
@@ -763,5 +828,6 @@ const PacksManagementPage = () => {
     </div>
   );
 };
+
 
 export default PacksManagementPage;

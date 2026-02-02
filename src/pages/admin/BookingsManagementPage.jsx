@@ -18,6 +18,7 @@ const BookingsManagementPage = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false); // ✅ État de chargement pour delete
 
   useEffect(() => {
     fetchBookings();
@@ -55,6 +56,8 @@ const BookingsManagementPage = () => {
   const handleDeleteConfirm = async () => {
     if (!bookingToDelete) return;
 
+    setDeleting(true); // ✅ Active le chargement
+
     try {
       await bookingsAPI.cancel(bookingToDelete.id);
       alert(`✅ Booking ${bookingToDelete.bookingReference} deleted!`);
@@ -64,7 +67,15 @@ const BookingsManagementPage = () => {
     } catch (error) {
       console.error('Error:', error);
       alert('❌ Error deleting booking');
+    } finally {
+      setDeleting(false); // ✅ Désactive le chargement
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setBookingToDelete(null);
+    setDeleting(false); // ✅ Réinitialise l'état
   };
 
   const handleViewDetails = (booking) => {
@@ -721,10 +732,7 @@ const BookingsManagementPage = () => {
       {/* ✅ Delete Confirmation Modal - Responsive + Anglais */}
       <Modal
         isOpen={showDeleteConfirm}
-        onClose={() => {
-          setShowDeleteConfirm(false);
-          setBookingToDelete(null);
-        }}
+        onClose={handleCancelDelete}
         title="⚠️ Confirmation Required"
       >
         <div className="text-center py-4 sm:py-6 md:py-8">
@@ -748,20 +756,31 @@ const BookingsManagementPage = () => {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <Button
               variant="outline"
-              onClick={() => {
-                setShowDeleteConfirm(false);
-                setBookingToDelete(null);
-              }}
+              onClick={handleCancelDelete}
               className="flex-1 border-2 hover:bg-gray-50 text-sm sm:text-base"
+              disabled={deleting}
             >
               Cancel
             </Button>
             <Button
               onClick={handleDeleteConfirm}
-              className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-lg hover:shadow-xl text-sm sm:text-base"
+              className={`flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-lg hover:shadow-xl text-sm sm:text-base ${deleting ? 'opacity-75 cursor-not-allowed' : ''}`}
+              disabled={deleting}
             >
-              <FaTrash className="flex-shrink-0" />
-              <span className="ml-2">Delete Permanently</span>
+              {deleting ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5 text-white flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span className="ml-2">Deleting...</span>
+                </>
+              ) : (
+                <>
+                  <FaTrash className="flex-shrink-0" />
+                  <span className="ml-2">Delete Permanently</span>
+                </>
+              )}
             </Button>
           </div>
         </div>
