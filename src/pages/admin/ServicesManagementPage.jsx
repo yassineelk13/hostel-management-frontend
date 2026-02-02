@@ -10,9 +10,11 @@ import { formatPrice } from '../../utils/priceFormatter';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+
 const ServicesManagementPage = () => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false); // ✅ État de chargement pour le formulaire
   const [showModal, setShowModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState(null);
@@ -25,9 +27,11 @@ const ServicesManagementPage = () => {
     priceType: 'FIXED'
   });
 
+
   useEffect(() => {
     fetchServices();
   }, []);
+
 
   const fetchServices = async () => {
     try {
@@ -41,6 +45,7 @@ const ServicesManagementPage = () => {
     }
   };
 
+
   const handleEdit = (service) => {
     setEditingService(service);
     setFormData({
@@ -53,8 +58,11 @@ const ServicesManagementPage = () => {
     setShowModal(true);
   };
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true); // ✅ Active le chargement
+
     try {
       if (editingService) {
         await servicesAPI.update(editingService.id, formData);
@@ -63,18 +71,22 @@ const ServicesManagementPage = () => {
         await servicesAPI.create(formData);
         toast.success('✅ Service created successfully!');
       }
-      
+
       handleCloseModal();
       fetchServices();
     } catch (error) {
       console.error('Error:', error);
       toast.error(`❌ ${error.response?.data?.message || 'Error saving service'}`);
+    } finally {
+      setSubmitting(false); // ✅ Désactive le chargement
     }
   };
+
 
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingService(null);
+    setSubmitting(false); // ✅ Réinitialise l'état de chargement
     setFormData({ 
       name: '', 
       description: '', 
@@ -84,14 +96,16 @@ const ServicesManagementPage = () => {
     });
   };
 
+
   const handleDeleteClick = (service) => {
     setServiceToDelete(service);
     setShowDeleteConfirm(true);
   };
 
+
   const handleDeleteConfirm = async () => {
     if (!serviceToDelete) return;
-    
+
     try {
       await servicesAPI.delete(serviceToDelete.id);
       toast.success('✅ Service deleted successfully!');
@@ -104,6 +118,7 @@ const ServicesManagementPage = () => {
     }
   };
 
+
   const getCategoryIcon = (category) => {
     const icons = {
       MEAL: FaUtensils,
@@ -113,6 +128,7 @@ const ServicesManagementPage = () => {
     };
     return icons[category] || FaConciergeBell;
   };
+
 
   const getCategoryLabel = (category) => {
     const labels = {
@@ -124,6 +140,7 @@ const ServicesManagementPage = () => {
     return labels[category] || category;
   };
 
+
   const getCategoryColor = (category) => {
     const colors = {
       MEAL: { bg: 'bg-orange-500', light: 'bg-orange-100', text: 'text-orange-600', border: 'border-orange-200' },
@@ -134,9 +151,11 @@ const ServicesManagementPage = () => {
     return colors[category] || colors.OTHER;
   };
 
+
   const getPriceTypeLabel = (priceType) => {
     return priceType === 'PER_NIGHT' ? 'Per night' : 'Fixed';
   };
+
 
   const servicesByCategory = {
     MEAL: services.filter(s => s.category === 'MEAL'),
@@ -145,11 +164,13 @@ const ServicesManagementPage = () => {
     OTHER: services.filter(s => s.category === 'OTHER')
   };
 
+
   if (loading) return <Loader />;
+
 
   return (
     <div className="space-y-4 sm:space-y-6 p-3 sm:p-4 md:p-6 animate-fade-in">
-      {/* ✅ Header responsive + Anglais */}
+      {/* Header responsive */}
       <div className="flex flex-col gap-4 sm:gap-6">
         <div className="flex-1 min-w-0">
           <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-display font-bold text-dark mb-2 flex items-center gap-2 sm:gap-3">
@@ -162,7 +183,8 @@ const ServicesManagementPage = () => {
           </p>
         </div>
 
-        {/* ✅ Quick Stats - Grid responsive 2x2 mobile, 4 colonnes desktop */}
+
+        {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
           {[
             { label: 'Meals', count: servicesByCategory.MEAL.length, icon: FaUtensils, color: 'orange' },
@@ -188,7 +210,8 @@ const ServicesManagementPage = () => {
         </div>
       </div>
 
-      {/* ✅ Add button responsive */}
+
+      {/* Add button */}
       <div className="flex justify-end">
         <Button 
           onClick={() => setShowModal(true)}
@@ -199,7 +222,8 @@ const ServicesManagementPage = () => {
         </Button>
       </div>
 
-      {/* ✅ Services Grid responsive */}
+
+      {/* Services Grid */}
       {services.length === 0 ? (
         <Card className="p-8 sm:p-12 md:p-16 text-center border-2 border-dashed border-gray-300">
           <div className="flex flex-col items-center gap-4 sm:gap-6 animate-fade-in">
@@ -221,7 +245,7 @@ const ServicesManagementPage = () => {
           {services.map((service, index) => {
             const Icon = getCategoryIcon(service.category);
             const colors = getCategoryColor(service.category);
-            
+
             return (
               <Card 
                 key={service.id} 
@@ -232,7 +256,7 @@ const ServicesManagementPage = () => {
                   animationFillMode: 'both'
                 }}
               >
-                {/* Header avec icon */}
+                {/* Header */}
                 <div className={`p-4 sm:p-6 bg-gradient-to-r ${colors.light} border-b-2 ${colors.border}`}>
                   <div className="flex items-start justify-between gap-2">
                     <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl ${colors.bg} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform flex-shrink-0`}>
@@ -253,14 +277,14 @@ const ServicesManagementPage = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Content */}
                 <div className="p-4 sm:p-6">
                   <h3 className="text-lg sm:text-xl font-bold text-dark mb-2 sm:mb-3 line-clamp-2 break-words">{service.name}</h3>
                   <p className="text-dark-light text-xs sm:text-sm mb-4 sm:mb-5 line-clamp-2 leading-relaxed">
                     {service.description}
                   </p>
-                  
+
                   {/* Price Card */}
                   <Card className="p-3 sm:p-4 mb-4 sm:mb-5 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200">
                     <div className="flex items-center justify-between gap-2">
@@ -278,6 +302,7 @@ const ServicesManagementPage = () => {
                       </div>
                     </div>
                   </Card>
+
 
                   {/* Actions */}
                   <div className="flex gap-2 sm:gap-3">
@@ -306,7 +331,8 @@ const ServicesManagementPage = () => {
         </div>
       )}
 
-      {/* ✅ Add/Edit Modal - Responsive + Anglais */}
+
+      {/* Add/Edit Modal */}
       <Modal
         isOpen={showModal}
         onClose={handleCloseModal}
@@ -320,164 +346,172 @@ const ServicesManagementPage = () => {
         }
       >
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-  <Input
-    label="Service Name"
-    name="name"
-    value={formData.name}
-    onChange={(e) => setFormData({...formData, name: e.target.value})}
-    placeholder="Full breakfast"
-    required
-    disabled={isSubmitting} // ✅ Désactive pendant submit
-  />
-  
-  <div>
-    <label className="block text-xs sm:text-sm font-bold text-dark mb-2">
-      Description <span className="text-red-500">*</span>
-    </label>
-    <textarea
-      name="description"
-      value={formData.description}
-      onChange={(e) => setFormData({...formData, description: e.target.value})}
-      className="input resize-none w-full text-sm sm:text-base"
-      rows="3"
-      placeholder="Describe the service in detail..."
-      required
-      disabled={isSubmitting} // ✅ Désactive pendant submit
-    ></textarea>
-  </div>
+          <Input
+            label="Service Name"
+            name="name"
+            value={formData.name}
+            onChange={(e) => setFormData({...formData, name: e.target.value})}
+            placeholder="Full breakfast"
+            disabled={submitting}
+            required
+          />
 
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-    <div>
-      <label className="block text-xs sm:text-sm font-bold text-dark mb-2">
-        Category <span className="text-red-500">*</span>
-      </label>
-      <select
-        name="category"
-        value={formData.category}
-        onChange={(e) => setFormData({...formData, category: e.target.value})}
-        className="input w-full text-sm sm:text-base"
-        required
-        disabled={isSubmitting} // ✅ Désactive pendant submit
-      >
-        <option value="MEAL">🍽️ Meals</option>
-        <option value="ACTIVITY">🏄 Activity</option>
-        <option value="TRANSPORT">🚗 Transport</option>
-        <option value="OTHER">📦 Other</option>
-      </select>
-    </div>
+          <div>
+            <label className="block text-xs sm:text-sm font-bold text-dark mb-2">
+              Description <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              className="input resize-none w-full text-sm sm:text-base"
+              rows="3"
+              placeholder="Describe the service in detail..."
+              disabled={submitting}
+              required
+            ></textarea>
+          </div>
 
-    <div>
-      <label className="block text-xs sm:text-sm font-bold text-dark mb-2">
-        Price Type <span className="text-red-500">*</span>
-      </label>
-      <select
-        name="priceType"
-        value={formData.priceType}
-        onChange={(e) => setFormData({...formData, priceType: e.target.value})}
-        className="input w-full text-sm sm:text-base"
-        required
-        disabled={isSubmitting} // ✅ Désactive pendant submit
-      >
-        <option value="FIXED">💰 Fixed</option>
-        <option value="PER_NIGHT">🌙 Per night</option>
-      </select>
-    </div>
-  </div>
 
-  <Input
-    label="Price (MAD)"
-    type="number"
-    step="0.01"
-    name="price"
-    value={formData.price}
-    onChange={(e) => setFormData({...formData, price: e.target.value})}
-    placeholder="50"
-    required
-    disabled={isSubmitting} // ✅ Désactive pendant submit
-  />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div>
+              <label className="block text-xs sm:text-sm font-bold text-dark mb-2">
+                Category <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="category"
+                value={formData.category}
+                onChange={(e) => setFormData({...formData, category: e.target.value})}
+                className="input w-full text-sm sm:text-base"
+                disabled={submitting}
+                required
+              >
+                <option value="MEAL">🍽️ Meals</option>
+                <option value="ACTIVITY">🏄 Activity</option>
+                <option value="TRANSPORT">🚗 Transport</option>
+                <option value="OTHER">📦 Other</option>
+              </select>
+            </div>
 
-  {/* Info Card */}
-  <Card className={`p-3 sm:p-4 ${
-    formData.priceType === 'PER_NIGHT' 
-      ? 'bg-blue-50 border-2 border-blue-200' 
-      : 'bg-green-50 border-2 border-green-200'
-  }`}>
-    <div className="flex items-start gap-2 sm:gap-3">
-      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-        formData.priceType === 'PER_NIGHT' 
-          ? 'bg-blue-500' 
-          : 'bg-green-500'
-      }`}>
-        {formData.priceType === 'PER_NIGHT' ? (
-          <FaClock className="text-white text-sm sm:text-base" />
-        ) : (
-          <FaCheckCircle className="text-white text-sm sm:text-base" />
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className={`text-xs sm:text-sm font-bold mb-0.5 sm:mb-1 ${
-          formData.priceType === 'PER_NIGHT' 
-            ? 'text-blue-800' 
-            : 'text-green-800'
-        }`}>
-          {formData.priceType === 'PER_NIGHT' ? 'Price per night' : 'Fixed price'}
-        </p>
-        <p className={`text-[10px] sm:text-xs break-words ${
-          formData.priceType === 'PER_NIGHT' 
-            ? 'text-blue-700' 
-            : 'text-green-700'
-        }`}>
-          {formData.priceType === 'PER_NIGHT' 
-            ? '💡 Price will be multiplied by the number of nights' 
-            : '💡 Price will be charged once during the stay'}
-        </p>
-      </div>
-    </div>
-  </Card>
 
-  {/* Action Buttons */}
-  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 border-t-2 border-gray-100">
-    <Button 
-      type="button" 
-      variant="outline" 
-      onClick={handleCloseModal} 
-      disabled={isSubmitting} // ✅ Désactive Cancel pendant submit
-      className={`flex-1 border-2 text-sm sm:text-base ${
-        isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-      }`}
-    >
-      Cancel
-    </Button>
-    <Button 
-      type="submit" 
-      disabled={isSubmitting}
-      className={`flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg hover:shadow-xl text-sm sm:text-base transition-all ${
-        isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
-      }`}
-    >
-      {isSubmitting ? (
-        <>
-          <FaSpinner className="animate-spin flex-shrink-0" />
-          <span>{editingService ? 'Updating...' : 'Creating...'}</span>
-        </>
-      ) : editingService ? (
-        <>
-          <FaCheckCircle className="flex-shrink-0" />
-          <span>Update</span>
-        </>
-      ) : (
-        <>
-          <FaPlus className="flex-shrink-0" />
-          <span>Create</span>
-        </>
-      )}
-    </Button>
-  </div>
-</form>
+            <div>
+              <label className="block text-xs sm:text-sm font-bold text-dark mb-2">
+                Price Type <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="priceType"
+                value={formData.priceType}
+                onChange={(e) => setFormData({...formData, priceType: e.target.value})}
+                className="input w-full text-sm sm:text-base"
+                disabled={submitting}
+                required
+              >
+                <option value="FIXED">💰 Fixed</option>
+                <option value="PER_NIGHT">🌙 Per night</option>
+              </select>
+            </div>
+          </div>
 
+
+          <Input
+            label="Price (MAD)"
+            type="number"
+            step="0.01"
+            name="price"
+            value={formData.price}
+            onChange={(e) => setFormData({...formData, price: e.target.value})}
+            placeholder="50"
+            disabled={submitting}
+            required
+          />
+
+
+          {/* Info Card */}
+          <Card className={`p-3 sm:p-4 ${
+            formData.priceType === 'PER_NIGHT' 
+              ? 'bg-blue-50 border-2 border-blue-200' 
+              : 'bg-green-50 border-2 border-green-200'
+          }`}>
+            <div className="flex items-start gap-2 sm:gap-3">
+              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                formData.priceType === 'PER_NIGHT' 
+                  ? 'bg-blue-500' 
+                  : 'bg-green-500'
+              }`}>
+                {formData.priceType === 'PER_NIGHT' ? (
+                  <FaClock className="text-white text-sm sm:text-base" />
+                ) : (
+                  <FaCheckCircle className="text-white text-sm sm:text-base" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={`text-xs sm:text-sm font-bold mb-0.5 sm:mb-1 ${
+                  formData.priceType === 'PER_NIGHT' 
+                    ? 'text-blue-800' 
+                    : 'text-green-800'
+                }`}>
+                  {formData.priceType === 'PER_NIGHT' ? 'Price per night' : 'Fixed price'}
+                </p>
+                <p className={`text-[10px] sm:text-xs break-words ${
+                  formData.priceType === 'PER_NIGHT' 
+                    ? 'text-blue-700' 
+                    : 'text-green-700'
+                }`}>
+                  {formData.priceType === 'PER_NIGHT' 
+                    ? '💡 Price will be multiplied by the number of nights' 
+                    : '💡 Price will be charged once during the stay'}
+                </p>
+              </div>
+            </div>
+          </Card>
+
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 border-t-2 border-gray-100">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={handleCloseModal} 
+              className="flex-1 border-2 text-sm sm:text-base"
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              className={`flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg hover:shadow-xl text-sm sm:text-base ${submitting ? 'opacity-75 cursor-not-allowed' : ''}`}
+              disabled={submitting}
+            >
+              {submitting ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5 text-white flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>{editingService ? 'Updating...' : 'Creating...'}</span>
+                </>
+              ) : (
+                <>
+                  {editingService ? (
+                    <>
+                      <FaCheckCircle className="flex-shrink-0" />
+                      <span>Update</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaPlus className="flex-shrink-0" />
+                      <span>Create</span>
+                    </>
+                  )}
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
       </Modal>
 
-      {/* ✅ Delete Confirmation Modal - Responsive + Anglais */}
+
+      {/* Delete Confirmation Modal */}
       <Modal
         isOpen={showDeleteConfirm}
         onClose={() => {
@@ -526,6 +560,7 @@ const ServicesManagementPage = () => {
         </div>
       </Modal>
 
+
       {/* Toast Container */}
       <ToastContainer 
         position="top-right"
@@ -536,6 +571,7 @@ const ServicesManagementPage = () => {
         draggable
         theme="light"
       />
+
 
       <style jsx>{`
         @keyframes slideUp {
@@ -552,5 +588,6 @@ const ServicesManagementPage = () => {
     </div>
   );
 };
+
 
 export default ServicesManagementPage;
