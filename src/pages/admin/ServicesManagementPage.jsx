@@ -14,7 +14,8 @@ import 'react-toastify/dist/ReactToastify.css';
 const ServicesManagementPage = () => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false); // ✅ État de chargement pour le formulaire
+  const [submitting, setSubmitting] = useState(false); // ✅ État de chargement pour create/update
+  const [deleting, setDeleting] = useState(false); // ✅ État de chargement pour delete
   const [showModal, setShowModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState(null);
@@ -106,6 +107,8 @@ const ServicesManagementPage = () => {
   const handleDeleteConfirm = async () => {
     if (!serviceToDelete) return;
 
+    setDeleting(true); // ✅ Active le chargement pour delete
+
     try {
       await servicesAPI.delete(serviceToDelete.id);
       toast.success('✅ Service deleted successfully!');
@@ -115,7 +118,16 @@ const ServicesManagementPage = () => {
     } catch (error) {
       console.error('Error:', error);
       toast.error('❌ Error deleting service');
+    } finally {
+      setDeleting(false); // ✅ Désactive le chargement
     }
+  };
+
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setServiceToDelete(null);
+    setDeleting(false); // ✅ Réinitialise l'état
   };
 
 
@@ -511,13 +523,10 @@ const ServicesManagementPage = () => {
       </Modal>
 
 
-      {/* Delete Confirmation Modal */}
+      {/* ✅ Delete Confirmation Modal AVEC LOADING */}
       <Modal
         isOpen={showDeleteConfirm}
-        onClose={() => {
-          setShowDeleteConfirm(false);
-          setServiceToDelete(null);
-        }}
+        onClose={handleCancelDelete}
         title="⚠️ Delete Confirmation"
       >
         <div className="text-center py-4 sm:py-6">
@@ -541,20 +550,31 @@ const ServicesManagementPage = () => {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <Button
               variant="outline"
-              onClick={() => {
-                setShowDeleteConfirm(false);
-                setServiceToDelete(null);
-              }}
+              onClick={handleCancelDelete}
               className="flex-1 border-2 text-sm sm:text-base"
+              disabled={deleting}
             >
               Cancel
             </Button>
             <Button
               onClick={handleDeleteConfirm}
-              className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-lg text-sm sm:text-base"
+              className={`flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-lg text-sm sm:text-base ${deleting ? 'opacity-75 cursor-not-allowed' : ''}`}
+              disabled={deleting}
             >
-              <FaTrash className="flex-shrink-0" />
-              <span>Delete</span>
+              {deleting ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5 text-white flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Deleting...</span>
+                </>
+              ) : (
+                <>
+                  <FaTrash className="flex-shrink-0" />
+                  <span>Delete</span>
+                </>
+              )}
             </Button>
           </div>
         </div>
