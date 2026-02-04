@@ -6,7 +6,7 @@ import Button from '../../components/common/Button';
 import Loader from '../../components/common/Loader';
 import { roomsAPI } from '../../services/api';
 import { formatPrice } from '../../utils/priceFormatter';
-
+import { bypassCloudinaryCache } from '../../utils/imageHelper'; // ✅ AJOUTE
 
 const RoomDetailPage = () => {
   const { id } = useParams();
@@ -122,10 +122,10 @@ const RoomDetailPage = () => {
                 {room.photos && room.photos.length > 0 ? (
                   <>
                     <img 
-                      src={room.photos[currentImageIndex]} 
-                      alt={`Room ${room.roomNumber}`}
-                      className="w-full h-full object-cover transition-opacity duration-500"
-                    />
+      src={bypassCloudinaryCache(room.photos[currentImageIndex])} // ✅ CHANGE ICI
+      alt={`Room ${room.roomNumber}`}
+      className="w-full h-full object-cover transition-opacity duration-500"
+    />
 
                     {room.photos.length > 1 && (
                       <>

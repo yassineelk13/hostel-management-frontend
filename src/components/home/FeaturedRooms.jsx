@@ -6,7 +6,7 @@ import Button from '../common/Button';
 import Loader from '../common/Loader';
 import { roomsAPI } from '../../services/api';
 import { formatPrice } from '../../utils/priceFormatter';
-
+import { bypassCloudinaryCache } from '../../utils/imageHelper'; // ✅ AJOUTE
 
 const FeaturedRooms = () => {
   const [rooms, setRooms] = useState([]);
@@ -90,10 +90,10 @@ const FeaturedRooms = () => {
                   {room.photos && room.photos.length > 0 ? (
                     <>
                       <img 
-                        src={room.photos[0]} 
-                        alt={`Room ${room.roomNumber}`}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      />
+      src={bypassCloudinaryCache(room.photos[0])} // ✅ CHANGE ICI
+      alt={`Room ${room.roomNumber}`}
+      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+    />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </>
                   ) : (

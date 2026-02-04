@@ -6,6 +6,7 @@ import Button from '../../components/common/Button';
 import Loader from '../../components/common/Loader';
 import { packsAPI } from '../../services/api';
 import { formatPrice } from '../../utils/priceFormatter';
+import { bypassCloudinaryCache } from '../../utils/imageHelper'; // ✅ AJOUTE CETTE LIGNE
 
 
 const PacksPage = () => {
@@ -83,10 +84,10 @@ const PacksPage = () => {
                   {pack.photos && pack.photos.length > 0 ? (
                     <>
                       <img 
-                        src={pack.photos[0]} 
-                        alt={pack.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      />
+      src={bypassCloudinaryCache(pack.photos[0])} // ✅ CHANGE ICI
+      alt={pack.name}
+      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+    />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </>
                   ) : (

@@ -10,6 +10,7 @@ import { roomsAPI } from '../../services/api';
 import { formatPrice } from '../../utils/priceFormatter';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { bypassCloudinaryCache } from '../../utils/imageHelper'; // ✅ AJOUTE
 
 
 const RoomsManagementPage = () => {
@@ -319,11 +320,11 @@ const RoomsManagementPage = () => {
               <div className="relative h-48 sm:h-56 bg-gradient-to-br from-purple-100 to-pink-100 overflow-hidden">
                 {room.photos && room.photos.length > 0 ? (
                   <>
-                    <img 
-                      src={room.photos[0]} 
-                      alt={`Room ${room.roomNumber}`} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-                    />
+                     <img 
+      src={bypassCloudinaryCache(room.photos[0])} // ✅ CHANGE ICI
+      alt={`Room ${room.roomNumber}`} 
+      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+    />
                     {room.photos.length > 1 && (
                       <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-3 px-2 sm:px-3 py-1 sm:py-1.5 bg-black/70 backdrop-blur-sm rounded-full flex items-center gap-1.5 sm:gap-2">
                         <FaImage className="text-white text-[10px] sm:text-xs flex-shrink-0" />

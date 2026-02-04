@@ -8,6 +8,7 @@ import ImageUpload from '../../components/common/ImageUpload';
 import Loader from '../../components/common/Loader';
 import { packsAPI, servicesAPI, roomsAPI } from '../../services/api';
 import { formatPrice } from '../../utils/priceFormatter';
+import { bypassCloudinaryCache } from '../../utils/imageHelper'; // ✅ AJOUTE CETTE LIGNE
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -400,10 +401,10 @@ const handlePermanentDeleteConfirm = async () => {
                 <div className="relative h-48 sm:h-56 bg-gradient-to-br from-pink-100 via-rose-100 to-orange-100 overflow-hidden">
                   {pack.photos && pack.photos.length > 0 ? (
                     <img 
-                      src={pack.photos[0]} 
-                      alt={pack.name} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-                    />
+    src={bypassCloudinaryCache(pack.photos[0])} // ✅ CHANGE ICI
+    alt={pack.name} 
+    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+  />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <FaBoxOpen className="text-5xl sm:text-7xl text-pink-300" />

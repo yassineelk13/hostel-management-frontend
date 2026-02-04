@@ -6,6 +6,7 @@ import Button from '../../components/common/Button';
 import Loader from '../../components/common/Loader';
 import { packsAPI } from '../../services/api';
 import { formatPrice } from '../../utils/priceFormatter';
+import { bypassCloudinaryCache } from '../../utils/imageHelper'; // ✅ AJOUTE CETTE LIGNE
 
 
 const PackDetailPage = () => {
@@ -137,11 +138,11 @@ const PackDetailPage = () => {
             {pack.photos && pack.photos.length > 0 && (
               <Card className="overflow-hidden">
                 <div className="relative h-64 sm:h-80 md:h-96 bg-accent group">
-                  <img
-                    src={pack.photos[currentImageIndex]}
-                    alt={pack.name}
-                    className="w-full h-full object-cover transition-opacity duration-500"
-                  />
+                 <img
+    src={bypassCloudinaryCache(pack.photos[currentImageIndex])} // ✅ CHANGE ICI
+    alt={pack.name}
+    className="w-full h-full object-cover transition-opacity duration-500"
+  />
 
                   {pack.photos.length > 1 && (
                     <>
