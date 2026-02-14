@@ -6,7 +6,8 @@ import Button from '../../components/common/Button';
 import Loader from '../../components/common/Loader';
 import { packsAPI } from '../../services/api';
 import { formatPrice } from '../../utils/priceFormatter';
-import { bypassCloudinaryCache } from '../../utils/imageHelper'; // ✅ AJOUTE CETTE LIGNE
+import { bypassCloudinaryCache } from '../../utils/imageHelper';
+
 
 
 const PackDetailPage = () => {
@@ -17,9 +18,11 @@ const PackDetailPage = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+
   useEffect(() => {
     fetchPack();
   }, [id]);
+
 
   const fetchPack = async () => {
     try {
@@ -34,24 +37,18 @@ const PackDetailPage = () => {
     }
   };
 
-  // Slideshow automatique
-  useEffect(() => {
-    if (!pack?.photos || pack.photos.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prev) => (prev === pack.photos.length - 1 ? 0 : prev + 1));
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [pack?.photos]);
 
   const nextImage = () => {
     if (!pack?.photos) return;
     setCurrentImageIndex((prev) => (prev === pack.photos.length - 1 ? 0 : prev + 1));
   };
 
+
   const prevImage = () => {
     if (!pack?.photos) return;
     setCurrentImageIndex((prev) => (prev === 0 ? pack.photos.length - 1 : prev - 1));
   };
+
 
   const handleBooking = () => {
     if (!selectedDate) {
@@ -59,9 +56,11 @@ const PackDetailPage = () => {
       return;
     }
 
+
     const checkIn = new Date(selectedDate);
     const checkOut = new Date(checkIn);
     checkOut.setDate(checkOut.getDate() + pack.durationDays);
+
 
     navigate('/booking', {
       state: {
@@ -77,6 +76,7 @@ const PackDetailPage = () => {
     });
   };
 
+
   if (loading) return <Loader />;
   
   if (!pack) {
@@ -90,15 +90,15 @@ const PackDetailPage = () => {
     );
   }
 
+
   const discountPercent = pack.originalPrice 
     ? Math.round((1 - pack.promoPrice / pack.originalPrice) * 100) 
     : 0;
 
+
   return (
     <div className="min-h-screen bg-background">
-     {/* ✅ Header - Correction du titre qui déborde */}
 <div className="relative bg-gradient-to-r from-primary via-primary-dark to-primary text-white py-16 sm:py-20 md:py-24 overflow-hidden">
-  {/* Décorations */}
   <div className="absolute inset-0 opacity-10">
     <div className="absolute top-5 sm:top-10 left-5 sm:left-10 w-20 sm:w-32 h-20 sm:h-32 border-2 sm:border-4 border-white rounded-full" />
     <div className="absolute bottom-5 sm:bottom-10 right-10 sm:right-20 w-24 sm:w-40 h-24 sm:h-40 border-2 sm:border-4 border-white rounded-full" />
@@ -114,7 +114,6 @@ const PackDetailPage = () => {
       Back to Packages
     </button>
     
-    {/* ✅ Titre avec break-words et overflow contrôlé */}
     <h1 className="text-3xl sm:text-4xl md:text-5xl font-display font-bold break-words hyphens-auto max-w-full">
       {pack.name}
     </h1>
@@ -129,24 +128,22 @@ const PackDetailPage = () => {
 </div>
 
 
-      {/* ✅ Content - Padding ajusté */}
+
       <div className="container-custom py-8 sm:py-10 md:py-12 px-4 sm:px-6">
         <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
-          {/* Colonne principale */}
           <div className="lg:col-span-2 space-y-6 md:space-y-8">
-            {/* ✅ Galerie photos - Hauteur réduite sur mobile */}
             {pack.photos && pack.photos.length > 0 && (
               <Card className="overflow-hidden">
                 <div className="relative h-64 sm:h-80 md:h-96 bg-accent group">
                  <img
-    src={bypassCloudinaryCache(pack.photos[currentImageIndex])} // ✅ CHANGE ICI
-    alt={pack.name}
-    className="w-full h-full object-cover transition-opacity duration-500"
-  />
+                    src={bypassCloudinaryCache(pack.photos[currentImageIndex])}
+                    alt={pack.name}
+                    className="w-full h-full object-cover transition-opacity duration-500"
+                  />
+
 
                   {pack.photos.length > 1 && (
                     <>
-                      {/* ✅ Navigation arrows - Plus petites sur mobile */}
                       <button
                         onClick={prevImage}
                         className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 sm:p-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity touch-manipulation"
@@ -162,7 +159,7 @@ const PackDetailPage = () => {
                         <FaChevronRight className="text-base sm:text-xl" />
                       </button>
 
-                      {/* ✅ Dots - Plus gros pour tactile */}
+
                       <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 sm:gap-2">
                         {pack.photos.map((_, index) => (
                           <button
@@ -178,7 +175,7 @@ const PackDetailPage = () => {
                         ))}
                       </div>
 
-                      {/* ✅ Counter - Plus petit sur mobile */}
+
                       <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-black/50 text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm">
                         {currentImageIndex + 1} / {pack.photos.length}
                       </div>
@@ -188,7 +185,7 @@ const PackDetailPage = () => {
               </Card>
             )}
 
-            {/* ✅ Description - Padding réduit + Anglais */}
+
             <Card className="p-5 sm:p-6 md:p-8">
               <h2 className="text-xl sm:text-2xl font-bold text-dark mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3">
                 <div className="w-1 h-6 sm:h-8 bg-primary rounded-full" />
@@ -199,7 +196,7 @@ const PackDetailPage = () => {
               </p>
             </Card>
 
-            {/* ✅ Infos clés - Grid responsive + Anglais */}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <Card className="p-4 sm:p-6 border-2 border-blue-200 bg-blue-50">
                 <div className="flex items-start gap-3 sm:gap-4">
@@ -214,6 +211,7 @@ const PackDetailPage = () => {
                   </div>
                 </div>
               </Card>
+
 
               <Card className="p-4 sm:p-6 border-2 border-purple-200 bg-purple-50">
                 <div className="flex items-start gap-3 sm:gap-4">
@@ -231,7 +229,7 @@ const PackDetailPage = () => {
               </Card>
             </div>
 
-            {/* ✅ Services inclus - Responsive + Anglais */}
+
             {pack.includedServices && pack.includedServices.length > 0 && (
               <Card className="p-5 sm:p-6 md:p-8 border-2 border-primary/20">
                 <h3 className="text-xl sm:text-2xl font-bold text-dark mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
@@ -265,7 +263,7 @@ const PackDetailPage = () => {
               </Card>
             )}
 
-            {/* ✅ Économies - Responsive + Anglais */}
+
             {pack.originalPrice && (
               <Card className="p-4 sm:p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200">
                 <div className="flex items-center gap-3 sm:gap-4">
@@ -286,10 +284,9 @@ const PackDetailPage = () => {
             )}
           </div>
 
-          {/* ✅ Sidebar réservation - Non sticky sur mobile */}
+
           <div className="lg:col-span-1">
             <Card className="p-5 sm:p-6 lg:sticky lg:top-24 border-2 border-primary/20 shadow-2xl">
-              {/* ✅ Prix - Responsive */}
               <div className="text-center mb-5 sm:mb-6">
                 {pack.originalPrice && (
                   <div className="text-base sm:text-lg text-dark-light line-through mb-1">
@@ -304,9 +301,10 @@ const PackDetailPage = () => {
                 </div>
               </div>
 
+
               <div className="h-px bg-accent/30 my-5 sm:my-6" />
 
-              {/* ✅ Formulaire - Anglais */}
+
               <div className="space-y-4 mb-5 sm:mb-6">
                 <div>
                   <label className="block text-xs sm:text-sm font-semibold text-dark mb-2 flex items-center gap-2">
@@ -322,6 +320,7 @@ const PackDetailPage = () => {
                     required
                   />
                 </div>
+
 
                 {selectedDate && (
                   <Card className="p-3 sm:p-4 bg-primary/5 border-2 border-primary/20">
@@ -353,6 +352,7 @@ const PackDetailPage = () => {
                 )}
               </div>
 
+
               <Button 
                 onClick={handleBooking}
                 className="w-full mb-4 shadow-xl hover:shadow-2xl text-sm sm:text-base"
@@ -360,6 +360,7 @@ const PackDetailPage = () => {
               >
                 Book this Package
               </Button>
+
 
               <div className="space-y-2 text-xs text-dark-light text-center">
                 <p className="flex items-center justify-center gap-2">
@@ -378,5 +379,6 @@ const PackDetailPage = () => {
     </div>
   );
 };
+
 
 export default PackDetailPage;
