@@ -19,7 +19,7 @@ const BookingPage = () => {
   const [availableRooms, setAvailableRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [availableServices, setAvailableServices] = useState([]);
-  const [formData, setFormData] = useState({
+const [formData, setFormData] = useState({
     guestName: '',
     guestEmail: '',
     guestPhone: '',
@@ -27,10 +27,10 @@ const BookingPage = () => {
     checkOutDate: packData?.checkOut || '',
     roomId: null,
     bedIds: [],
-    serviceIds: packData?.services || [],
+    serviceIds: [],  // ✅ Toujours vide — le backend gère les services du pack
     packId: packData?.packId || null,
     notes: ''
-  });
+});
   const [bookingConfirmation, setBookingConfirmation] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -159,26 +159,34 @@ const BookingPage = () => {
     return roomTotal + servicesTotal;
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (formData.bedIds.length === 0) {
-      alert('Please select at least one bed');
-      return;
+        alert('Please select at least one bed');
+        return;
     }
 
     setLoading(true);
     try {
-      const response = await bookingsAPI.create(formData);
-      setBookingConfirmation(response.data.data);
-      setStep(4);
+        // ✅ Payload propre
+        const payload = {
+            ...formData,
+            serviceIds: isPack ? [] : formData.serviceIds, // ✅ Vide si pack
+            packId: isPack ? packData.packId : null,
+        };
+
+        const response = await bookingsAPI.create(payload);  // ✅ payload au lieu de formData
+        setBookingConfirmation(response.data.data);
+        setStep(4);
     } catch (error) {
-      console.error('Error:', error);
-      alert(error.response?.data?.message || 'Error creating booking');
+        console.error('Error:', error);
+        alert(error.response?.data?.message || 'Error creating booking');
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
+
 
   const steps = [
     { number: 1, label: 'Dates', icon: FaCalendarAlt },
