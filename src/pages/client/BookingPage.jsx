@@ -27,10 +27,11 @@ const [formData, setFormData] = useState({
     checkOutDate: packData?.checkOut || '',
     roomId: null,
     bedIds: [],
-    serviceIds: [],  // ✅ Toujours vide — le backend gère les services du pack
+    serviceIds: isPack ? (packData?.services || []) : [], // ✅ Pré-sélectionné si pack
     packId: packData?.packId || null,
     notes: ''
 });
+
   const [bookingConfirmation, setBookingConfirmation] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -170,13 +171,12 @@ const handleSubmit = async (e) => {
     setLoading(true);
     try {
         // ✅ Payload propre
-        const payload = {
-            ...formData,
-            serviceIds: isPack ? [] : formData.serviceIds, // ✅ Vide si pack
-            packId: isPack ? packData.packId : null,
-        };
-
-        const response = await bookingsAPI.create(payload);  // ✅ payload au lieu de formData
+       const payload = {
+    ...formData,
+    serviceIds: isPack ? [] : formData.serviceIds, // ✅ Backend gère les services du pack
+    packId: isPack ? packData.packId : null,
+};
+const response = await bookingsAPI.create(payload);  // ✅ payload au lieu de formData
         setBookingConfirmation(response.data.data);
         setStep(4);
     } catch (error) {
