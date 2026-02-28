@@ -426,7 +426,7 @@ const ServicesManagementPage = () => {
 
 
           <Input
-            label="Price (MAD)"
+            label="Price (€)"
             type="number"
             step="0.01"
             name="price"

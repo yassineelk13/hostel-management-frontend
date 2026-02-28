@@ -1,7 +1,7 @@
 export const formatPrice = (price) => {
   return new Intl.NumberFormat('fr-MA', {
     style: 'currency',
-    currency: 'MAD',
+    currency: '€',
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(price);

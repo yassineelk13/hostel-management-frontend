@@ -625,7 +625,7 @@ const handlePermanentDeleteConfirm = async () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <Input
-              label="Regular Price (MAD)"
+              label="Regular Price (€)"
               type="number"
               step="0.01"
               name="originalPrice"
@@ -634,7 +634,7 @@ const handlePermanentDeleteConfirm = async () => {
               placeholder="1500"
             />
             <Input
-              label="Promo Price (MAD)"
+              label="Promo Price (€)"
               type="number"
               step="0.01"
               name="promoPrice"

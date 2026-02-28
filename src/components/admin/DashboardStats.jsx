@@ -23,7 +23,7 @@ const DashboardStats = ({ stats }) => {
     },
     {
       title: 'Revenus du mois',
-      value: `${stats.monthlyRevenue || 0} MAD`,
+      value: `${stats.monthlyRevenue || 0} €`,
       icon: FaDollarSign,
       color: 'bg-purple-500',
     },
