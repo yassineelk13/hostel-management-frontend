@@ -71,7 +71,7 @@ const Footer = () => {
   const socialLinks = [
     { 
       icon: FaInstagram, 
-      url: 'https://www.instagram.com/shams_housesurf/',
+      url: 'https://www.instagram.com/shamshousesi/',
       color: 'hover:bg-gradient-to-br hover:from-purple-600 hover:to-pink-600',
       label: 'Instagram'
     },

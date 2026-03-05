@@ -108,7 +108,7 @@ const ContactPage = () => {
               <h2 className="text-2xl font-display font-bold text-dark mb-6">
                 Envoyez-nous un message
               </h2>
-              
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <Input
                   label="Nom complet"
@@ -168,14 +168,16 @@ const ContactPage = () => {
         </div>
 
         {/* Carte */}
+        {/* Carte */}
         <div className="mt-12 rounded-xl overflow-hidden shadow-medium">
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3447.891!2d-9.8176!3d30.8447!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzDCsDUwJzQwLjkiTiA5wrA0OScwMy40Ilc!5e0!3m2!1sen!2sma!4v1234567890"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3425.5482467334514!2d-9.82081202495807!3d30.843322080280505!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xdb25f044a5d0ef5%3A0x6343f995819cdb96!2sWestern%20Union!5e0!3m2!1sfr!2sma!4v1772726051428!5m2!1sfr!2sma"
             width="100%"
             height="450"
             style={{ border: 0 }}
-            allowFullScreen=""
+            allowFullScreen
             loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
             title="Shams House Location"
           ></iframe>
         </div>
