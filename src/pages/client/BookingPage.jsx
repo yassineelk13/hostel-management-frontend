@@ -583,7 +583,7 @@ const response = await bookingsAPI.create(payload);  // ✅ payload au lieu de f
 
                 <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
                  {/* ✅ DORMITORY → sélection manuelle des lits */}
-{selectedRoom?.roomType === 'DORMITORY' && (
+{selectedRoom?.roomType === 'DORTOIR' && (
     <div>
         <label className="block text-base sm:text-lg font-semibold text-dark mb-3 sm:mb-4 flex items-center gap-2">
             <FaBed className="text-primary flex-shrink-0" />
