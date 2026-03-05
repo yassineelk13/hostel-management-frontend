@@ -106,16 +106,18 @@ const [formData, setFormData] = useState({
   };
 
   const handleRoomSelect = (room) => {
-    setSelectedRoom(room);
+    console.log('Room selected:', room);           // ✅ Voir toute la room
+    console.log('Beds:', room.beds);               // ✅ Voir les beds
+    console.log('RoomType:', room.roomType);        // ✅ Voir le type exact
 
-    // ✅ SINGLE/DOUBLE → sélectionner tous les lits automatiquement
+    setSelectedRoom(room);
     const allBedIds = (room.roomType === 'SINGLE' || room.roomType === 'DOUBLE')
         ? room.beds?.map(b => b.id) || []
-        : []; // DORMITORY → sélection manuelle par le client
-
+        : [];
     setFormData({ ...formData, roomId: room.id, bedIds: allBedIds });
     setStep(3);
 };
+
 
 
   const handleBedToggle = (bedId) => {
