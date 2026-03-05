@@ -107,13 +107,16 @@ const [formData, setFormData] = useState({
 
   const handleRoomSelect = (room) => {
     setSelectedRoom(room);
-    setFormData({
-      ...formData,
-      roomId: room.id,
-      bedIds: []
-    });
+
+    // ✅ SINGLE/DOUBLE → sélectionner tous les lits automatiquement
+    const allBedIds = (room.roomType === 'SINGLE' || room.roomType === 'DOUBLE')
+        ? room.beds?.map(b => b.id) || []
+        : []; // DORMITORY → sélection manuelle par le client
+
+    setFormData({ ...formData, roomId: room.id, bedIds: allBedIds });
     setStep(3);
-  };
+};
+
 
   const handleBedToggle = (bedId) => {
     setFormData(prev => ({
@@ -136,29 +139,33 @@ const [formData, setFormData] = useState({
   };
 
   const calculateTotal = () => {
-    if (isPack && packData?.totalPrice) {
-      return packData.totalPrice;
-    }
-
+    if (isPack && packData?.totalPrice) return packData.totalPrice;
     if (!selectedRoom) return 0;
 
-    const checkIn = new Date(formData.checkInDate);
-    const checkOut = new Date(formData.checkOutDate);
-    const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+    const nights = Math.ceil(
+        (new Date(formData.checkOutDate) - new Date(formData.checkInDate)) / (1000 * 60 * 60 * 24)
+    );
 
-    const roomTotal = selectedRoom.pricePerNight * nights * formData.bedIds.length;
+    let roomTotal = 0;
+
+    // ✅ SINGLE/DOUBLE → prix chambre entière (pas × nb lits)
+    if (selectedRoom.roomType === 'SINGLE' || selectedRoom.roomType === 'DOUBLE') {
+        roomTotal = selectedRoom.pricePerNight * nights;
+    } else {
+        // ✅ DORMITORY → prix par lit sélectionné
+        roomTotal = selectedRoom.pricePerNight * nights * formData.bedIds.length;
+    }
 
     const servicesTotal = availableServices
-      .filter(s => formData.serviceIds.includes(s.id))
-      .reduce((sum, s) => {
-        if (s.priceType === 'PER_NIGHT') {
-          return sum + (s.price * nights);
-        }
-        return sum + s.price;
-      }, 0);
+        .filter(s => formData.serviceIds.includes(s.id))
+        .reduce((sum, s) => {
+            if (s.priceType === 'PER_NIGHT') return sum + s.price * nights;
+            return sum + s.price;
+        }, 0);
 
     return roomTotal + servicesTotal;
-  };
+};
+
 
 const handleSubmit = async (e) => {
     e.preventDefault();
@@ -573,48 +580,70 @@ const response = await bookingsAPI.create(payload);  // ✅ payload au lieu de f
                 </Card>
 
                 <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
-                  {/* Sélection lits */}
-                  <div>
-                    <label className="block text-base sm:text-lg font-semibold text-dark mb-3 sm:mb-4 flex items-center gap-2">
-                      <FaBed className="text-primary flex-shrink-0" />
-                      <span>Select Your Beds <span className="text-red-500">*</span></span>
-                    </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
-                      {selectedRoom.beds?.map((bed) => (
-                        <label
-                          key={bed.id}
-                          className={`
-                            relative flex flex-col items-center justify-center p-4 sm:p-6 border-3 rounded-xl cursor-pointer transition-all
-                            ${formData.bedIds.includes(bed.id)
-                              ? 'border-primary bg-primary/10 shadow-lg scale-105'
-                              : 'border-accent hover:border-primary/50 hover:shadow-md'}
-                          `}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={formData.bedIds.includes(bed.id)}
-                            onChange={() => handleBedToggle(bed.id)}
-                            className="sr-only"
-                          />
-                          {formData.bedIds.includes(bed.id) && (
-                            <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-primary text-white rounded-full p-0.5 sm:p-1">
-                              <FaCheckCircle className="text-xs sm:text-sm" />
-                            </div>
-                          )}
-                          <div className={`p-2 sm:p-3 rounded-xl mb-1 sm:mb-2 ${formData.bedIds.includes(bed.id) ? 'bg-primary' : 'bg-accent'
-                            }`}>
-                            <FaBed className={`text-xl sm:text-2xl ${formData.bedIds.includes(bed.id) ? 'text-white' : 'text-primary'
-                              }`} />
-                          </div>
-                          <div className="font-semibold text-dark text-xs sm:text-sm">Bed {bed.bedNumber}</div>
-                        </label>
-                      ))}
+                 {/* ✅ DORMITORY → sélection manuelle des lits */}
+{selectedRoom?.roomType === 'DORMITORY' && (
+    <div>
+        <label className="block text-base sm:text-lg font-semibold text-dark mb-3 sm:mb-4 flex items-center gap-2">
+            <FaBed className="text-primary flex-shrink-0" />
+            Select Your Bed <span className="text-red-500">*</span>
+        </label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+            {selectedRoom.beds?.map((bed) => (
+                <label key={bed.id} className={`relative flex flex-col items-center justify-center p-4 sm:p-6 border-3 rounded-xl cursor-pointer transition-all ${
+                    formData.bedIds.includes(bed.id)
+                        ? 'border-primary bg-primary/10 shadow-lg scale-105'
+                        : 'border-accent hover:border-primary/50 hover:shadow-md'
+                }`}>
+                    <input
+                        type="checkbox"
+                        checked={formData.bedIds.includes(bed.id)}
+                        onChange={() => handleBedToggle(bed.id)}
+                        className="sr-only"
+                    />
+                    {formData.bedIds.includes(bed.id) && (
+                        <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-primary text-white rounded-full p-0.5 sm:p-1">
+                            <FaCheckCircle className="text-xs sm:text-sm" />
+                        </div>
+                    )}
+                    <div className={`p-2 sm:p-3 rounded-xl mb-1 sm:mb-2 ${
+                        formData.bedIds.includes(bed.id) ? 'bg-primary' : 'bg-accent'
+                    }`}>
+                        <FaBed className={`text-xl sm:text-2xl ${
+                            formData.bedIds.includes(bed.id) ? 'text-white' : 'text-primary'
+                        }`} />
                     </div>
-                    <p className="text-xs sm:text-sm text-dark-light mt-2 sm:mt-3 flex items-center gap-2">
-                      <FaCheckCircle className="text-primary flex-shrink-0" />
-                      <span>{formData.bedIds.length} bed(s) selected</span>
-                    </p>
-                  </div>
+                    <div className="font-semibold text-dark text-xs sm:text-sm">Bed {bed.bedNumber}</div>
+                </label>
+            ))}
+        </div>
+        <p className="text-xs sm:text-sm text-dark-light mt-2 sm:mt-3 flex items-center gap-2">
+            <FaCheckCircle className="text-primary flex-shrink-0" />
+            <span>{formData.bedIds.length} bed{formData.bedIds.length !== 1 ? 's' : ''} selected</span>
+        </p>
+    </div>
+)}
+
+{/* ✅ SINGLE/DOUBLE → chambre entière automatique */}
+{(selectedRoom?.roomType === 'SINGLE' || selectedRoom?.roomType === 'DOUBLE') && (
+    <div className="p-4 sm:p-5 bg-green-50 rounded-xl border-2 border-green-200">
+        <div className="flex items-center gap-3">
+            <div className="p-2 bg-green-100 rounded-xl flex-shrink-0">
+                <FaBed className="text-green-600 text-xl" />
+            </div>
+            <div className="flex-1">
+                <p className="font-semibold text-dark text-sm sm:text-base">
+                    Full room reserved
+                </p>
+                <p className="text-xs sm:text-sm text-dark-light">
+                    You are booking the entire room
+                    ({selectedRoom.beds?.length || 0} bed{selectedRoom.beds?.length !== 1 ? 's' : ''} included)
+                </p>
+            </div>
+            <FaCheckCircle className="text-green-500 text-xl flex-shrink-0" />
+        </div>
+    </div>
+)}
+
 
                   {/* Services */}
                   {availableServices.length > 0 && (
