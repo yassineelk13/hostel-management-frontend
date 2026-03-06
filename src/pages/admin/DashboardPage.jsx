@@ -159,18 +159,18 @@ const DashboardPage = () => {
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-dark text-base sm:text-lg mb-1 truncate">{booking.guestName}</p>
                         <p className="text-xs sm:text-sm text-dark-light mb-2 truncate">{booking.guestEmail}</p>
-                        <div className="flex items-center gap-2">
+                        {/* <div className="flex items-center gap-2">
                           <span className="px-2 py-1 bg-green-500 text-white text-[10px] sm:text-xs font-semibold rounded-full whitespace-nowrap">
                             Ref: {booking.bookingReference}
                           </span>
-                        </div>
+                        </div> */}
                       </div>
-                      <div className="flex-shrink-0 sm:text-right">
+                      {/* <div className="flex-shrink-0 sm:text-right">
                         <div className="px-3 sm:px-4 py-2 bg-white rounded-lg shadow-sm border border-green-200 inline-block">
                           <p className="text-[10px] sm:text-xs text-dark-light mb-1">Access Code</p>
                           <p className="text-xl sm:text-2xl font-bold text-green-600">{booking.accessCode}</p>
                         </div>
-                      </div>
+                      </div> */}
                     </div>
 
                     {/* Hover indicator */}
@@ -232,11 +232,11 @@ const DashboardPage = () => {
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-dark text-base sm:text-lg mb-1 truncate">{booking.guestName}</p>
                         <p className="text-xs sm:text-sm text-dark-light mb-2 truncate">{booking.guestEmail}</p>
-                        <div className="flex items-center gap-2">
+                        {/* <div className="flex items-center gap-2">
                           <span className="px-2 py-1 bg-orange-500 text-white text-[10px] sm:text-xs font-semibold rounded-full whitespace-nowrap">
                             Ref: {booking.bookingReference}
                           </span>
-                        </div>
+                        </div> */}
                       </div>
                       <div className="flex-shrink-0 sm:text-right">
                         <div className="px-3 sm:px-4 py-2 bg-white rounded-lg shadow-sm border border-orange-200 inline-block">
