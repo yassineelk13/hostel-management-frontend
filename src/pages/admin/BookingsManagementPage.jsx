@@ -596,7 +596,7 @@ const BookingsManagementPage = () => {
                 {selectedBooking.guestName?.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="font-bold text-base sm:text-lg md:text-xl break-words">Booking {selectedBooking.bookingReference}</div>
+                <div className="font-bold text-base sm:text-lg md:text-xl break-words">Booking Details</div>
                 <div className="text-xs sm:text-sm font-normal text-dark-light truncate">{selectedBooking.guestName}</div>
               </div>
             </div>
@@ -604,7 +604,7 @@ const BookingsManagementPage = () => {
         >
           <div className="space-y-4 sm:space-y-6">
             {/* Reference & Access Code */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            {/* <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <Card className="p-3 sm:p-4 md:p-5 border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 hover:shadow-lg transition-shadow">
                 <div className="text-[10px] sm:text-xs text-blue-700 mb-1 sm:mb-2 font-bold uppercase tracking-wide">Reference</div>
                 <div className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-600 break-all">{selectedBooking.bookingReference}</div>
@@ -613,7 +613,7 @@ const BookingsManagementPage = () => {
                 <div className="text-[10px] sm:text-xs text-green-700 mb-1 sm:mb-2 font-bold uppercase tracking-wide">Access Code</div>
                 <div className="text-xl sm:text-2xl md:text-3xl font-bold text-green-600">{selectedBooking.accessCode}</div>
               </Card>
-            </div>
+            </div> */}
 
             {/* Package Info */}
             {selectedBooking.pack && (

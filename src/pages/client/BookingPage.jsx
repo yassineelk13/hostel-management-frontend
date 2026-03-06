@@ -841,10 +841,10 @@ const response = await bookingsAPI.create(payload);  // ✅ payload au lieu de f
 
             <Card className="bg-gradient-to-r from-accent/20 to-accent/10 p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 text-left">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
-                <div className="p-3 sm:p-4 bg-white rounded-xl">
+                {/* <div className="p-3 sm:p-4 bg-white rounded-xl">
                   <div className="text-xs sm:text-sm text-dark-light mb-1 sm:mb-2">Booking Reference</div>
                   <div className="font-bold text-primary text-lg sm:text-xl md:text-2xl break-all">{bookingConfirmation.bookingReference}</div>
-                </div>
+                </div> */}
                 {/* <div className="p-3 sm:p-4 bg-white rounded-xl">
                   <div className="text-xs sm:text-sm text-dark-light mb-1 sm:mb-2">Access Code</div>
                   <div className="font-bold text-primary text-lg sm:text-xl md:text-2xl">{bookingConfirmation.accessCode}</div>
