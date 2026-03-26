@@ -1,147 +1,120 @@
 import { useState, useEffect } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaBoxOpen, FaExclamationTriangle, FaCheck, FaPercentage, FaClock, FaTags, FaDoorOpen, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaBoxOpen, FaExclamationTriangle, FaCheck,
+  FaBed, FaCheckCircle, FaTimesCircle, FaTimes } from 'react-icons/fa';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Modal from '../../components/common/Modal';
 import ImageUpload from '../../components/common/ImageUpload';
 import Loader from '../../components/common/Loader';
-import { packsAPI, servicesAPI, roomsAPI } from '../../services/api';
+import { packsAPI, roomsAPI } from '../../services/api'; // ✅ servicesAPI supprimé
 import { formatPrice } from '../../utils/priceFormatter';
-import { bypassCloudinaryCache } from '../../utils/imageHelper'; // ✅ AJOUTE CETTE LIGNE
+import { bypassCloudinaryCache } from '../../utils/imageHelper';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+const EMPTY_FORM = {
+  name: '',
+  description: '',
+  dortoirPricePerNight: '',
+  singlePricePerNight: '',
+  doublePricePerNight: '',
+  features: [],
+  photos: []
+};
 
 const PacksManagementPage = () => {
   const [packs, setPacks] = useState([]);
-  const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [deleting, setDeleting] = useState(false); // ✅ État de chargement pour delete
+  const [deleting, setDeleting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [showModal, setShowModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [packToDelete, setPackToDelete] = useState(null);
   const [editingPack, setEditingPack] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    originalPrice: '',
-    promoPrice: '',
-    duration: '',
-    roomType: 'DOUBLE',
-    serviceIds: [],
-    photos: []
-  });
+  const [newFeature, setNewFeature] = useState('');
+  const [formData, setFormData] = useState(EMPTY_FORM);
 
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
-      const [packsRes, servicesRes] = await Promise.all([
-        packsAPI.getAll(),
-        servicesAPI.getAll()
-      ]);
-      setPacks(packsRes.data.data);
-      setServices(servicesRes.data.data);
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('❌ Error loading data');
+      const res = await packsAPI.getAll();
+      setPacks(res.data.data);
+    } catch {
+      toast.error('❌ Error loading packages');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handlePhotosChange = (photos) => setFormData({ ...formData, photos });
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  // ===== FEATURES =====
+  const handleAddFeature = () => {
+    const trimmed = newFeature.trim();
+    if (!trimmed) return;
+    setFormData(prev => ({ ...prev, features: [...prev.features, trimmed] }));
+    setNewFeature('');
   };
 
-
-  const handlePhotosChange = (photos) => {
-    setFormData({
-      ...formData,
-      photos: photos
-    });
-  };
-
-
-  const handleServiceToggle = (serviceId) => {
+  const handleRemoveFeature = (index) => {
     setFormData(prev => ({
       ...prev,
-      serviceIds: prev.serviceIds.includes(serviceId)
-        ? prev.serviceIds.filter(id => id !== serviceId)
-        : [...prev.serviceIds, serviceId]
+      features: prev.features.filter((_, i) => i !== index)
     }));
   };
 
+  const handleFeatureKeyDown = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); handleAddFeature(); }
+  };
 
+  // ===== SUBMIT =====
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validation 3 prix obligatoires
+    if (!formData.dortoirPricePerNight || !formData.singlePricePerNight || !formData.doublePricePerNight) {
+      toast.error('❌ All 3 room type prices are required!');
+      return;
+    }
+    if (formData.features.length === 0) {
+      toast.error('❌ Add at least one feature!');
+      return;
+    }
+
     setUploading(true);
-
-    if (formData.originalPrice && parseFloat(formData.promoPrice) >= parseFloat(formData.originalPrice)) {
-      toast.error('❌ Promo price must be lower than regular price!');
-      setUploading(false);
-      return;
-    }
-
-
-    if (formData.serviceIds.length === 0) {
-      toast.error('❌ Select at least one service!');
-      setUploading(false);
-      return;
-    }
-
-
     try {
       let photoUrls = [];
 
-
       if (!editingPack && formData.photos.length > 0 && formData.photos[0] instanceof File) {
         setUploadProgress({ current: 0, total: formData.photos.length });
-
         for (let i = 0; i < formData.photos.length; i++) {
-          const file = formData.photos[i];
-          const photoFormData = new FormData();
-          photoFormData.append('photo', file);
-
+          const fd = new FormData();
+          fd.append('photo', formData.photos[i]);
           try {
-            const response = await roomsAPI.uploadPhoto(photoFormData);
-
-            if (response.data.success) {
-              photoUrls.push(response.data.data);
+            const res = await roomsAPI.uploadPhoto(fd);
+            if (res.data.success) {
+              photoUrls.push(res.data.data);
               setUploadProgress({ current: i + 1, total: formData.photos.length });
             }
-          } catch (error) {
-            console.error(`Error uploading photo ${i + 1}:`, error);
-            toast.warning(`⚠️ Error photo ${i + 1}`);
-          }
+          } catch { toast.warning(`⚠️ Error uploading photo ${i + 1}`); }
         }
       } else {
         photoUrls = formData.photos.filter(p => typeof p === 'string');
       }
 
-
       const dataToSend = {
         name: formData.name,
         description: formData.description,
-        durationDays: parseInt(formData.duration),
-        originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : null,
-        promoPrice: parseFloat(formData.promoPrice),
-        roomType: formData.roomType,
-        photos: photoUrls,
-        includedServiceIds: formData.serviceIds
+        dortoirPricePerNight: parseFloat(formData.dortoirPricePerNight),
+        singlePricePerNight: parseFloat(formData.singlePricePerNight),
+        doublePricePerNight: parseFloat(formData.doublePricePerNight),
+        features: formData.features,
+        photos: photoUrls
       };
-
 
       if (editingPack) {
         await packsAPI.update(editingPack.id, dataToSend);
@@ -151,12 +124,9 @@ const PacksManagementPage = () => {
         toast.success('✅ Package created successfully!');
       }
 
-
       handleCloseModal();
       fetchData();
-
     } catch (error) {
-      console.error('Error:', error);
       toast.error(`❌ ${error.response?.data?.message || 'Error saving package'}`);
     } finally {
       setUploading(false);
@@ -164,758 +134,503 @@ const PacksManagementPage = () => {
     }
   };
 
-
+  // ===== EDIT =====
   const handleEdit = (pack) => {
     setEditingPack(pack);
     setFormData({
       name: pack.name,
       description: pack.description,
-      originalPrice: pack.originalPrice?.toString() || '',
-      promoPrice: pack.promoPrice.toString(),
-      duration: pack.durationDays?.toString() || pack.duration?.toString() || '',
-      roomType: pack.roomType || 'DOUBLE',
-      serviceIds: pack.includedServices ? pack.includedServices.map(s => s.id) : [],
+      dortoirPricePerNight: pack.dortoirPricePerNight?.toString() || '',
+      singlePricePerNight: pack.singlePricePerNight?.toString() || '',
+      doublePricePerNight: pack.doublePricePerNight?.toString() || '',
+      features: pack.features || [],
       photos: pack.photos || []
     });
     setShowModal(true);
   };
 
+  // ===== DELETE =====
+  const handleDeleteClick = (pack) => { setPackToDelete(pack); setShowDeleteConfirm(true); };
+  const handleCancelDelete = () => { setShowDeleteConfirm(false); setPackToDelete(null); setDeleting(false); };
 
-  const handleDeleteClick = (pack) => {
-    setPackToDelete(pack);
-    setShowDeleteConfirm(true);
+  const handleDeactivateConfirm = async () => {
+    if (!packToDelete) return;
+    setDeleting(true);
+    try {
+      await packsAPI.delete(packToDelete.id);
+      toast.success('✅ Package deactivated!');
+      setShowDeleteConfirm(false); setPackToDelete(null); fetchData();
+    } catch { toast.error('❌ Error deactivating'); }
+    finally { setDeleting(false); }
   };
 
-
-  // ✅ Option 1: Deactivate (Soft Delete)
-const handleDeactivateConfirm = async () => {
-  if (!packToDelete) return;
-
-  setDeleting(true);
-
-  try {
-    await packsAPI.delete(packToDelete.id); // Soft delete
-    toast.success('✅ Package deactivated successfully!');
-    setShowDeleteConfirm(false);
-    setPackToDelete(null);
-    fetchData();
-  } catch (error) {
-    console.error('Error:', error);
-    toast.error('❌ Error deactivating package');
-  } finally {
-    setDeleting(false);
-  }
-};
-
-// ✅ Option 2: Delete Permanently (Hard Delete)
-const handlePermanentDeleteConfirm = async () => {
-  if (!packToDelete) return;
-
-  setDeleting(true);
-
-  try {
-    await packsAPI.deletePermanently(packToDelete.id); // Hard delete
-    toast.success('🗑️ Package deleted permanently!');
-    setShowDeleteConfirm(false);
-    setPackToDelete(null);
-    fetchData();
-  } catch (error) {
-    console.error('Error:', error);
-    toast.error('❌ Error deleting package permanently');
-  } finally {
-    setDeleting(false);
-  }
-};
-
-
-
-  const handleCancelDelete = () => {
-    setShowDeleteConfirm(false);
-    setPackToDelete(null);
-    setDeleting(false); // ✅ Réinitialise l'état
+  const handlePermanentDeleteConfirm = async () => {
+    if (!packToDelete) return;
+    setDeleting(true);
+    try {
+      await packsAPI.deletePermanently(packToDelete.id);
+      toast.success('🗑️ Package deleted permanently!');
+      setShowDeleteConfirm(false); setPackToDelete(null); fetchData();
+    } catch { toast.error('❌ Error deleting permanently'); }
+    finally { setDeleting(false); }
   };
-
 
   const handleReactivate = async (id) => {
     try {
       await packsAPI.update(id, { isActive: true });
-      toast.success('✅ Package reactivated successfully!');
-      fetchData();
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('❌ Error reactivating package');
-    }
+      toast.success('✅ Package reactivated!'); fetchData();
+    } catch { toast.error('❌ Error reactivating'); }
   };
-
 
   const handleCloseModal = () => {
-    setShowModal(false);
-    setEditingPack(null);
-    setFormData({
-      name: '',
-      description: '',
-      originalPrice: '',
-      promoPrice: '',
-      duration: '',
-      roomType: 'DOUBLE',
-      serviceIds: [],
-      photos: []
-    });
+    setShowModal(false); setEditingPack(null);
+    setFormData(EMPTY_FORM); setNewFeature('');
   };
 
-
-  const calculateEconomies = (original, promo) => {
-    return original - promo;
+  const getFromPrice = (pack) => {
+    const prices = [pack.dortoirPricePerNight, pack.singlePricePerNight, pack.doublePricePerNight].filter(Boolean);
+    return prices.length > 0 ? Math.min(...prices) : null;
   };
-
-
-  const calculateDiscount = (original, promo) => {
-    return Math.round((1 - promo / original) * 100);
-  };
-
-
-  const getRoomTypeLabel = (type) => {
-    const labels = {
-      SINGLE: 'Single',
-      DOUBLE: 'Double',
-      DORTOIR: 'Dormitory'
-    };
-    return labels[type] || type;
-  };
-
-
-  const getRoomTypeColor = (type) => {
-    const colors = {
-      SINGLE: 'bg-blue-500',
-      DOUBLE: 'bg-purple-500',
-      DORTOIR: 'bg-green-500'
-    };
-    return colors[type] || 'bg-gray-500';
-  };
-
 
   const activePacks = packs.filter(p => p.isActive !== false);
   const inactivePacks = packs.filter(p => p.isActive === false);
 
-
   if (loading) return <Loader />;
-
 
   return (
     <div className="space-y-4 sm:space-y-6 p-3 sm:p-4 md:p-6 animate-fade-in">
-      {/* Header responsive */}
+
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 sm:gap-6">
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-display font-bold text-dark mb-2 flex items-center gap-2 sm:gap-3">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-dark mb-2 flex items-center gap-2 sm:gap-3">
             <span className="inline-block w-1.5 sm:w-2 h-8 sm:h-10 bg-gradient-to-b from-pink-500 to-rose-700 rounded-full flex-shrink-0" />
-            <span className="break-words">Packages Management</span>
+            Packages Management
           </h1>
-          <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-dark-light">
+          <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-dark-light">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse flex-shrink-0" />
-              <span>{activePacks.length} active</span>
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              {activePacks.length} active
             </div>
             {inactivePacks.length > 0 && (
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0" />
-                <span>{inactivePacks.length} deactivated</span>
+                <span className="w-2 h-2 bg-red-500 rounded-full" />
+                {inactivePacks.length} deactivated
               </div>
             )}
           </div>
         </div>
-
-
-        {/* Quick Stats */}
-        <Card className="p-3 sm:p-4 border-2 border-pink-200 bg-gradient-to-br from-pink-50 to-rose-100 min-w-[120px] sm:min-w-[140px] flex-shrink-0">
+        <Card className="p-3 sm:p-4 border-2 border-pink-200 bg-gradient-to-br from-pink-50 to-rose-100 flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-pink-500 flex items-center justify-center text-white flex-shrink-0">
-              <FaBoxOpen className="text-sm sm:text-base" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-pink-500 flex items-center justify-center text-white">
+              <FaBoxOpen />
             </div>
-            <div className="min-w-0">
+            <div>
               <div className="text-xl sm:text-2xl font-bold text-pink-700">{packs.length}</div>
-              <div className="text-[10px] sm:text-xs text-pink-600 font-semibold truncate">Total packages</div>
+              <div className="text-[10px] sm:text-xs text-pink-600 font-semibold">Total packages</div>
             </div>
           </div>
         </Card>
       </div>
 
-
-      {/* Add button */}
+      {/* Add Button */}
       <div className="flex justify-end">
-        <Button 
+        <Button
           onClick={() => setShowModal(true)}
-          className="shadow-xl hover:shadow-2xl group bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-sm sm:text-base w-full sm:w-auto"
+          className="shadow-xl group bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 w-full sm:w-auto"
         >
-          <FaPlus className="group-hover:rotate-90 transition-transform duration-300 flex-shrink-0" />
-          <span>Create Package</span>
+          <FaPlus className="group-hover:rotate-90 transition-transform duration-300" />
+          Create Package
         </Button>
       </div>
 
-
       {/* Packs Grid */}
       {packs.length === 0 ? (
-        <Card className="p-8 sm:p-12 md:p-16 text-center border-2 border-dashed border-gray-300">
-          <div className="flex flex-col items-center gap-4 sm:gap-6 animate-fade-in">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-pink-100 to-rose-200 flex items-center justify-center">
-              <FaBoxOpen className="text-4xl sm:text-5xl text-pink-400" />
+        <Card className="p-12 text-center border-2 border-dashed border-gray-300">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-pink-100 to-rose-200 flex items-center justify-center">
+              <FaBoxOpen className="text-5xl text-pink-400" />
             </div>
-            <div>
-              <p className="text-xl sm:text-2xl font-bold text-dark mb-2 break-words">No packages created</p>
-              <p className="text-sm sm:text-base text-dark-light mb-4 sm:mb-6">Create your first package to attract customers</p>
-              <Button onClick={() => setShowModal(true)} className="text-sm sm:text-base">
-                <FaPlus className="flex-shrink-0" />
-                <span>Create Package</span>
-              </Button>
-            </div>
+            <p className="text-xl font-bold text-dark">No packages created</p>
+            <Button onClick={() => setShowModal(true)}>
+              <FaPlus /> Create Package
+            </Button>
           </div>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {packs.map((pack, index) => {
-            const discount = pack.originalPrice ? calculateDiscount(pack.originalPrice, pack.promoPrice) : 0;
+          {packs.map((pack, index) => (
+            <Card
+              key={pack.id}
+              className={`overflow-hidden border-2 hover:shadow-2xl transition-all duration-300 group ${
+                pack.isActive === false
+                  ? 'border-red-300 opacity-75'
+                  : 'border-gray-100 hover:border-pink-300'
+              }`}
+              style={{ animation: 'slideUp 0.4s ease-out', animationDelay: `${index * 100}ms`, animationFillMode: 'both' }}
+            >
+              {/* Inactive banner */}
+              {pack.isActive === false && (
+                <div className="bg-gradient-to-r from-red-500 to-red-600 text-white text-center py-2 font-bold text-xs flex items-center justify-center gap-2">
+                  <FaTimesCircle /> PACKAGE DEACTIVATED
+                </div>
+              )}
 
-            return (
-              <Card 
-                key={pack.id} 
-                className={`overflow-hidden border-2 hover:shadow-2xl transition-all duration-300 group ${
-                  pack.isActive === false 
-                    ? 'border-red-300 opacity-75' 
-                    : 'border-gray-100 hover:border-pink-300'
-                }`}
-                style={{ 
-                  animation: 'slideUp 0.4s ease-out',
-                  animationDelay: `${index * 100}ms`,
-                  animationFillMode: 'both'
-                }}
-              >
-                {/* Status Banner */}
-                {pack.isActive === false && (
-                  <div className="bg-gradient-to-r from-red-500 to-red-600 text-white text-center py-2 sm:py-2.5 font-bold text-xs sm:text-sm flex items-center justify-center gap-2">
-                    <FaTimesCircle className="flex-shrink-0" />
-                    <span>PACKAGE DEACTIVATED</span>
+              {/* Image */}
+              <div className="relative h-48 sm:h-56 bg-gradient-to-br from-pink-100 to-orange-100 overflow-hidden">
+                {pack.photos && pack.photos.length > 0 ? (
+                  <img
+                    src={bypassCloudinaryCache(pack.photos[0])}
+                    alt={pack.name}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <FaBoxOpen className="text-7xl text-pink-300" />
+                  </div>
+                )}
+                {/* From price badge */}
+                {getFromPrice(pack) && (
+                  <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-xl text-xs font-bold">
+                    from {formatPrice(getFromPrice(pack))}/night
+                  </div>
+                )}
+              </div>
+
+              {/* Content */}
+              <div className="p-4 sm:p-5">
+                <h3 className="text-lg sm:text-xl font-bold text-dark mb-2 line-clamp-1">{pack.name}</h3>
+                <p className="text-dark-light text-xs sm:text-sm mb-4 line-clamp-2 leading-relaxed">{pack.description}</p>
+
+                {/* ✅ 3 Prix par room type */}
+                <Card className="p-3 mb-4 bg-gradient-to-br from-pink-50 to-rose-50 border-2 border-pink-200">
+                  <p className="text-[10px] font-bold text-pink-700 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                    <FaBed className="flex-shrink-0" /> Price per night
+                  </p>
+                  <div className="space-y-1.5">
+                    {[
+                      { label: 'Dormitory', value: pack.dortoirPricePerNight, color: 'text-green-600' },
+                      { label: 'Single', value: pack.singlePricePerNight, color: 'text-blue-600' },
+                      { label: 'Double', value: pack.doublePricePerNight, color: 'text-purple-600' },
+                    ].map(({ label, value, color }) => value && (
+                      <div key={label} className="flex justify-between items-center text-xs">
+                        <span className="text-dark-light">{label}</span>
+                        <span className={`font-bold ${color}`}>{formatPrice(value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
+                {/* ✅ Features (strings) */}
+                {pack.features && pack.features.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-[10px] font-bold text-dark mb-2 flex items-center gap-1.5">
+                      <FaCheckCircle className="text-green-500" /> What's included
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {pack.features.slice(0, 3).map((f, i) => (
+                        <span key={i} className="text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">
+                          ✓ {f}
+                        </span>
+                      ))}
+                      {pack.features.length > 3 && (
+                        <span className="text-[10px] bg-gray-200 text-dark px-2 py-1 rounded-full font-semibold">
+                          +{pack.features.length - 3} more
+                        </span>
+                      )}
+                    </div>
                   </div>
                 )}
 
-
-                {/* Image */}
-                <div className="relative h-48 sm:h-56 bg-gradient-to-br from-pink-100 via-rose-100 to-orange-100 overflow-hidden">
-                  {pack.photos && pack.photos.length > 0 ? (
-                    <img 
-    src={bypassCloudinaryCache(pack.photos[0])} // ✅ CHANGE ICI
-    alt={pack.name} 
-    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-  />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <FaBoxOpen className="text-5xl sm:text-7xl text-pink-300" />
-                    </div>
-                  )}
-
-                  {/* Discount badge */}
-                  {pack.originalPrice && pack.isActive !== false && (
-                    <div className="absolute top-3 sm:top-4 right-3 sm:right-4">
-                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-2xl animate-pulse">
-                        <div className="text-center">
-                          <div className="text-white font-bold text-lg sm:text-xl">-{discount}%</div>
-                          <div className="text-white text-[10px] sm:text-xs">OFF</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-
-                  {/* Room type badge */}
-                  <div className="absolute top-3 sm:top-4 left-3 sm:left-4">
-                    <span className={`inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 ${getRoomTypeColor(pack.roomType)} text-white rounded-full text-[10px] sm:text-xs font-bold shadow-lg`}>
-                      <FaDoorOpen className="flex-shrink-0" />
-                      <span className="hidden xs:inline">{getRoomTypeLabel(pack.roomType)}</span>
-                    </span>
-                  </div>
-
-
-                  {/* Duration badge */}
-                  <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4">
-                    <span className="inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-black/70 backdrop-blur-sm text-white rounded-full text-[10px] sm:text-xs font-bold">
-                      <FaClock className="flex-shrink-0" />
-                      <span>{pack.durationDays || pack.duration} day{(pack.durationDays || pack.duration) > 1 ? 's' : ''}</span>
-                    </span>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-4 sm:p-6">
-                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-dark mb-2 sm:mb-3 line-clamp-2 break-words">{pack.name}</h3>
-                  <p className="text-dark-light text-xs sm:text-sm mb-4 sm:mb-5 line-clamp-2 leading-relaxed">
-                    {pack.description}
-                  </p>
-
-                  {/* Price Card */}
-                  <Card className="p-3 sm:p-4 mb-4 sm:mb-5 bg-gradient-to-br from-pink-50 to-rose-50 border-2 border-pink-200">
-                    {pack.originalPrice && (
-                      <div className="flex items-center justify-between mb-1 sm:mb-2">
-                        <span className="text-xs sm:text-sm text-dark-light">Regular price</span>
-                        <span className="text-base sm:text-lg line-through text-dark-light">{formatPrice(pack.originalPrice)}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between mb-1 sm:mb-2">
-                      <span className="text-xs sm:text-sm font-bold text-pink-700">Package price</span>
-                      <span className="text-2xl sm:text-3xl font-bold text-pink-600">{formatPrice(pack.promoPrice)}</span>
-                    </div>
-                    {pack.originalPrice && (
-                      <div className="pt-2 border-t border-pink-200">
-                        <div className="flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-green-600 font-bold">
-                          <FaTags className="flex-shrink-0" />
-                          <span>Save {formatPrice(calculateEconomies(pack.originalPrice, pack.promoPrice))}</span>
-                        </div>
-                      </div>
-                    )}
-                  </Card>
-
-
-                  {/* Services */}
-                  {pack.includedServices && pack.includedServices.length > 0 && (
-                    <div className="mb-4 sm:mb-5">
-                      <p className="text-[10px] sm:text-xs font-bold text-dark mb-2 flex items-center gap-1.5 sm:gap-2">
-                        <FaCheckCircle className="text-green-500 flex-shrink-0" />
-                        <span>Included services</span>
-                      </p>
-                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                        {pack.includedServices.slice(0, 3).map(service => (
-                          <span key={service.id} className="text-[10px] sm:text-xs bg-green-100 text-green-700 px-2 sm:px-2.5 py-1 rounded-full font-semibold break-words">
-                            ✓ {service.name}
-                          </span>
-                        ))}
-                        {pack.includedServices.length > 3 && (
-                          <span className="text-[10px] sm:text-xs bg-gray-200 text-dark px-2 sm:px-2.5 py-1 rounded-full font-semibold">
-                            +{pack.includedServices.length - 3} more
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-
-                  {/* Actions */}
-                  <div className="flex gap-2 sm:gap-3">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1 border-2 border-pink-500 text-pink-600 hover:bg-pink-50 hover:scale-105 transition-all text-xs sm:text-sm"
-                      onClick={() => handleEdit(pack)}
+                {/* Actions */}
+                <div className="flex gap-2 sm:gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 border-2 border-pink-500 text-pink-600 hover:bg-pink-50 text-xs sm:text-sm"
+                    onClick={() => handleEdit(pack)}
+                  >
+                    <FaEdit /> <span className="hidden xs:inline ml-1">Edit</span>
+                  </Button>
+                  {pack.isActive === false ? (
+                    <Button
+                      size="sm"
+                      className="bg-green-500 hover:bg-green-600 text-white flex-shrink-0"
+                      onClick={() => handleReactivate(pack.id)}
                     >
-                      <FaEdit className="flex-shrink-0" />
-                      <span className="hidden xs:inline ml-1">Edit</span>
+                      <FaCheck />
                     </Button>
-
-                    {pack.isActive === false ? (
-                      <Button 
-                        size="sm" 
-                        className="bg-green-500 hover:bg-green-600 text-white hover:scale-105 transition-all shadow-lg flex-shrink-0"
-                        onClick={() => handleReactivate(pack.id)}
-                        title="Reactivate this package"
-                      >
-                        <FaCheck />
-                      </Button>
-                    ) : (
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="border-2 border-red-500 text-red-600 hover:bg-red-50 hover:scale-105 transition-all flex-shrink-0"
-                        onClick={() => handleDeleteClick(pack)}
-                      >
-                        <FaTrash className="text-xs sm:text-sm" />
-                      </Button>
-                    )}
-                  </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-2 border-red-500 text-red-600 hover:bg-red-50 flex-shrink-0"
+                      onClick={() => handleDeleteClick(pack)}
+                    >
+                      <FaTrash />
+                    </Button>
+                  )}
                 </div>
-              </Card>
-            );
-          })}
+              </div>
+            </Card>
+          ))}
         </div>
       )}
 
-
-      {/* Add/Edit Modal */}
+      {/* ===== CREATE / EDIT MODAL ===== */}
       <Modal
         isOpen={showModal}
         onClose={handleCloseModal}
         title={
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center text-white flex-shrink-0">
-              {editingPack ? <FaEdit className="text-sm sm:text-base" /> : <FaPlus className="text-sm sm:text-base" />}
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center text-white">
+              {editingPack ? <FaEdit /> : <FaPlus />}
             </div>
-            <span className="text-base sm:text-lg break-words">{editingPack ? 'Edit Package' : 'Create Package'}</span>
+            {editingPack ? 'Edit Package' : 'Create Package'}
           </div>
         }
       >
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-          {/* Image Upload */}
+        <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+
+          {/* Photos */}
           <div>
-            <label className="block text-xs sm:text-sm font-bold text-dark mb-2 sm:mb-3 flex items-center gap-2">
-              <FaBoxOpen className="text-pink-500 flex-shrink-0" />
-              <span>Package Photos</span>
+            <label className="block text-xs sm:text-sm font-bold text-dark mb-2 flex items-center gap-2">
+              <FaBoxOpen className="text-pink-500" /> Package Photos
             </label>
-            <ImageUpload
-              images={formData.photos}
-              onChange={handlePhotosChange}
-              maxImages={5}
-              acceptFiles={!editingPack}
-            />
+            <ImageUpload images={formData.photos} onChange={handlePhotosChange} maxImages={5} acceptFiles={!editingPack} />
           </div>
 
-
-          {/* Upload Progress */}
+          {/* Upload progress */}
           {uploading && uploadProgress.total > 0 && (
-            <Card className="p-4 sm:p-5 bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-300 animate-pulse">
-              <div className="flex items-center justify-between mb-2 sm:mb-3">
-                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-blue-500 flex items-center justify-center animate-spin flex-shrink-0">
-                    <FaBoxOpen className="text-white text-sm sm:text-base" />
-                  </div>
-                  <p className="font-bold text-blue-800 text-xs sm:text-sm truncate">Uploading...</p>
-                </div>
-                <p className="text-lg sm:text-xl font-bold text-blue-800 flex-shrink-0">
-                  {uploadProgress.current} / {uploadProgress.total}
-                </p>
+            <Card className="p-4 bg-blue-50 border-2 border-blue-300 animate-pulse">
+              <div className="flex items-center justify-between mb-2">
+                <p className="font-bold text-blue-800 text-sm">Uploading photos...</p>
+                <p className="font-bold text-blue-800">{uploadProgress.current}/{uploadProgress.total}</p>
               </div>
-              <div className="w-full bg-blue-200 rounded-full h-3 sm:h-4 overflow-hidden shadow-inner">
-                <div 
-                  className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 sm:h-4 rounded-full transition-all duration-500 flex items-center justify-center"
+              <div className="w-full bg-blue-200 rounded-full h-3 overflow-hidden">
+                <div
+                  className="bg-blue-500 h-3 rounded-full transition-all duration-500"
                   style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
-                >
-                  <span className="text-[10px] sm:text-xs font-bold text-white">
-                    {Math.round((uploadProgress.current / uploadProgress.total) * 100)}%
-                  </span>
-                </div>
+                />
               </div>
-              <p className="text-[10px] sm:text-xs text-blue-700 mt-2 sm:mt-3 flex items-center gap-2">
-                <span className="w-2 h-2 bg-blue-500 rounded-full animate-ping flex-shrink-0" />
-                <span>Do not close this window</span>
+            </Card>
+          )}
+
+          {/* Section 1 - Informations générales */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-bold text-dark border-b border-gray-200 pb-2">📦 General Information</h3>
+            <Input label="Package Name" name="name" value={formData.name} onChange={handleChange} placeholder="Ride All In" required />
+            <div>
+              <label className="block text-xs sm:text-sm font-bold text-dark mb-2">
+                Description <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                className="input resize-none w-full text-sm"
+                rows="3"
+                placeholder="Describe the package..."
+                required
+              />
+            </div>
+          </div>
+
+          {/* Section 2 - 3 Prix obligatoires */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-bold text-dark border-b border-gray-200 pb-2">
+              🛏️ Price per room type <span className="text-red-500 text-xs font-normal">* all required</span>
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <Input
+                  label="Dormitory (€/night)"
+                  type="number"
+                  step="0.01"
+                  name="dortoirPricePerNight"
+                  value={formData.dortoirPricePerNight}
+                  onChange={handleChange}
+                  placeholder="55"
+                  required
+                />
+              </div>
+              <div>
+                <Input
+                  label="Single (€/night)"
+                  type="number"
+                  step="0.01"
+                  name="singlePricePerNight"
+                  value={formData.singlePricePerNight}
+                  onChange={handleChange}
+                  placeholder="120"
+                  required
+                />
+              </div>
+              <div>
+                <Input
+                  label="Double (€/night)"
+                  type="number"
+                  step="0.01"
+                  name="doublePricePerNight"
+                  value={formData.doublePricePerNight}
+                  onChange={handleChange}
+                  placeholder="200"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3 - Features dynamiques */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-bold text-dark border-b border-gray-200 pb-2">✅ What's included</h3>
+
+            {/* Input + Add button */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newFeature}
+                onChange={e => setNewFeature(e.target.value)}
+                onKeyDown={handleFeatureKeyDown}
+                placeholder="Ex: Daily surf lessons (6 sessions)"
+                className="input flex-1 text-sm"
+              />
+              <Button type="button" onClick={handleAddFeature} className="flex-shrink-0 bg-green-500 hover:bg-green-600 px-4">
+                <FaPlus />
+              </Button>
+            </div>
+            <p className="text-[10px] text-dark-light">Press Enter or click + to add a feature</p>
+
+            {/* Feature list */}
+            {formData.features.length === 0 ? (
+              <p className="text-xs text-dark-light italic text-center py-3 border-2 border-dashed border-gray-200 rounded-xl">
+                No features yet — add at least one
               </p>
-            </Card>
-          )}
-
-
-          {/* Form Fields */}
-          <Input
-            label="Package Name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            placeholder="Relax & Surf Package"
-            required
-          />
-
-
-          <div>
-            <label className="block text-xs sm:text-sm font-bold text-dark mb-2">
-              Description <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              className="input resize-none w-full text-sm sm:text-base"
-              rows="3"
-              placeholder="Describe the benefits and features of this package..."
-              required
-            ></textarea>
-          </div>
-
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-            <Input
-              label="Regular Price (€)"
-              type="number"
-              step="0.01"
-              name="originalPrice"
-              value={formData.originalPrice}
-              onChange={handleChange}
-              placeholder="1500"
-            />
-            <Input
-              label="Promo Price (€)"
-              type="number"
-              step="0.01"
-              name="promoPrice"
-              value={formData.promoPrice}
-              onChange={handleChange}
-              placeholder="1200"
-              required
-            />
-            <Input
-              label="Duration (days)"
-              type="number"
-              name="duration"
-              value={formData.duration}
-              onChange={handleChange}
-              placeholder="7"
-              min="1"
-              required
-            />
-          </div>
-
-
-          <div>
-            <label className="block text-xs sm:text-sm font-bold text-dark mb-2">
-              Room Type <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="roomType"
-              value={formData.roomType}
-              onChange={handleChange}
-              className="input w-full text-sm sm:text-base"
-              required
-            >
-              <option value="SINGLE">🛏️ Single</option>
-              <option value="DOUBLE">🛏️🛏️ Double</option>
-              <option value="DORTOIR">🏠 Dormitory</option>
-            </select>
-          </div>
-
-
-          {/* Savings Preview */}
-          {formData.originalPrice && formData.promoPrice && parseFloat(formData.promoPrice) < parseFloat(formData.originalPrice) && (
-            <Card className="p-4 sm:p-5 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-green-500 flex items-center justify-center text-white flex-shrink-0">
-                  <FaPercentage className="text-lg sm:text-2xl" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-green-800 text-base sm:text-lg">
-                    {calculateDiscount(parseFloat(formData.originalPrice), parseFloat(formData.promoPrice))}% discount
-                  </p>
-                  <p className="text-xs sm:text-sm text-green-700 break-words">
-                    Save <strong>{formatPrice(calculateEconomies(parseFloat(formData.originalPrice), parseFloat(formData.promoPrice)))}</strong>
-                  </p>
-                </div>
-              </div>
-            </Card>
-          )}
-
-
-          {/* Services Selection */}
-          <div>
-            <label className="block text-xs sm:text-sm font-bold text-dark mb-2 sm:mb-3 flex items-center gap-2">
-              <FaCheckCircle className="text-green-500 flex-shrink-0" />
-              <span>Included Services <span className="text-red-500">*</span></span>
-            </label>
-            {services.length === 0 ? (
-              <Card className="p-4 sm:p-5 text-center bg-orange-50 border-2 border-orange-200">
-                <p className="text-xs sm:text-sm text-orange-700 font-semibold">
-                  ⚠️ No services available. Create services first.
-                </p>
-              </Card>
             ) : (
-              <>
-                <Card className="max-h-48 sm:max-h-60 overflow-y-auto border-2 border-gray-200">
-                  <div className="divide-y divide-gray-100">
-                    {services.map(service => (
-                      <label 
-                        key={service.id} 
-                        className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 cursor-pointer hover:bg-green-50 transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.serviceIds.includes(service.id)}
-                          onChange={() => handleServiceToggle(service.id)}
-                          className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 border-2 border-gray-300 rounded focus:ring-green-500 flex-shrink-0"
-                        />
-                        <span className="text-xs sm:text-sm flex-1 font-medium text-dark break-words min-w-0">{service.name}</span>
-                        <span className="text-xs sm:text-sm font-bold text-green-600 whitespace-nowrap">{formatPrice(service.price)}</span>
-                      </label>
-                    ))}
-                  </div>
-                </Card>
-                <p className="text-[10px] sm:text-xs text-dark-light mt-2 flex items-center gap-2">
-                  <FaTags className="text-green-500 flex-shrink-0" />
-                  <span>{formData.serviceIds.length} service{formData.serviceIds.length !== 1 ? 's' : ''} selected</span>
-                </p>
-              </>
+              <ul className="space-y-2">
+                {formData.features.map((feature, i) => (
+                  <li key={i} className="flex items-center gap-2 p-2.5 bg-green-50 border border-green-200 rounded-xl">
+                    <FaCheckCircle className="text-green-500 flex-shrink-0 text-xs" />
+                    <span className="flex-1 text-sm text-dark break-words min-w-0">{feature}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFeature(i)}
+                      className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0 p-1"
+                    >
+                      <FaTimes className="text-xs" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
             )}
+            <p className="text-[10px] text-dark-light flex items-center gap-1.5">
+              <FaCheckCircle className="text-green-500" /> {formData.features.length} feature{formData.features.length !== 1 ? 's' : ''} added
+            </p>
           </div>
-
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 border-t-2 border-gray-100">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={handleCloseModal} 
-              className="flex-1 border-2 text-sm sm:text-base"
-              disabled={uploading}
-            >
+          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t-2 border-gray-100">
+            <Button type="button" variant="outline" onClick={handleCloseModal} className="flex-1" disabled={uploading}>
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              className="flex-1 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 shadow-lg hover:shadow-xl text-sm sm:text-base"
+            <Button
+              type="submit"
+              className="flex-1 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 shadow-lg"
               disabled={uploading}
             >
               {uploading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
-                  <span>Upload {uploadProgress.current}/{uploadProgress.total}</span>
-                </>
+                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Uploading...</>
               ) : (
-                <>
-                  {editingPack ? <FaCheckCircle className="flex-shrink-0" /> : <FaPlus className="flex-shrink-0" />}
-                  <span>{editingPack ? 'Update' : 'Create Package'}</span>
-                </>
+                <>{editingPack ? <FaCheckCircle /> : <FaPlus />} {editingPack ? 'Update Package' : 'Create Package'}</>
               )}
             </Button>
           </div>
         </form>
       </Modal>
 
-
-     {/* ✅✅ NOUVEAU Modal de confirmation avec 2 options */}
-<Modal
-  isOpen={showDeleteConfirm}
-  onClose={handleCancelDelete}
-  title={
-    <div className="flex items-center gap-3">
-      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-100 to-red-200 flex items-center justify-center animate-pulse">
-        <FaExclamationTriangle className="text-2xl text-orange-600" />
-      </div>
-      <span className="text-lg">Delete Package</span>
-    </div>
-  }
->
-  <div className="space-y-4 py-4">
-    {/* Package Info */}
-    <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4">
-      <h3 className="text-lg font-bold text-dark mb-1 line-clamp-1">
-        {packToDelete?.name}
-      </h3>
-      <p className="text-sm text-dark-light">
-        Choose how you want to handle this package
-      </p>
-    </div>
-
-    {/* Option 1: Deactivate (Soft Delete) */}
-    <Card className="p-4 border-2 border-orange-300 hover:border-orange-400 transition-all cursor-pointer group">
-      <div className="flex items-start gap-4">
-        <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-          <FaTimesCircle className="text-xl text-orange-600" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h4 className="font-bold text-dark mb-1 flex items-center gap-2">
-            <span>Deactivate</span>
-            <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold">
-              RECOMMENDED
-            </span>
-          </h4>
-          <p className="text-xs text-dark-light mb-3 leading-relaxed">
-            Hide the package from public view. You can reactivate it later.
-          </p>
-          <Button
-            onClick={handleDeactivateConfirm}
-            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg text-sm"
-            disabled={deleting}
-          >
-            {deleting ? (
-              <>
-                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Deactivating...</span>
-              </>
-            ) : (
-              <>
-                <FaTimesCircle />
-                <span>Deactivate Package</span>
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-    </Card>
-
-    {/* Option 2: Delete Permanently (Hard Delete) */}
-    <Card className="p-4 border-2 border-red-300 hover:border-red-400 transition-all cursor-pointer group">
-      <div className="flex items-start gap-4">
-        <div className="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-          <FaTrash className="text-xl text-red-600" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h4 className="font-bold text-dark mb-1 flex items-center gap-2">
-            <span>Delete Permanently</span>
-            <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">
-              IRREVERSIBLE
-            </span>
-          </h4>
-          <p className="text-xs text-dark-light mb-3 leading-relaxed">
-            <strong className="text-red-600">⚠️ Warning:</strong> This will permanently delete all data including photos from Cloudinary. This action cannot be undone!
-          </p>
-          <Button
-            onClick={handlePermanentDeleteConfirm}
-            className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg text-sm"
-            disabled={deleting}
-          >
-            {deleting ? (
-              <>
-                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Deleting permanently...</span>
-              </>
-            ) : (
-              <>
-                <FaTrash />
-                <span>Delete Permanently</span>
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-    </Card>
-
-    {/* Cancel Button */}
-    <div className="flex justify-center pt-2 border-t-2 border-gray-100">
-      <Button
-        variant="outline"
-        onClick={handleCancelDelete}
-        className="w-full border-2 text-sm"
-        disabled={deleting}
+      {/* ===== DELETE MODAL ===== */}
+      <Modal
+        isOpen={showDeleteConfirm}
+        onClose={handleCancelDelete}
+        title={
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center animate-pulse">
+              <FaExclamationTriangle className="text-2xl text-orange-600" />
+            </div>
+            Delete Package
+          </div>
+        }
       >
-        Cancel
-      </Button>
-    </div>
-  </div>
-</Modal>
+        <div className="space-y-4 py-4">
+          <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4">
+            <h3 className="text-lg font-bold text-dark mb-1 line-clamp-1">{packToDelete?.name}</h3>
+            <p className="text-sm text-dark-light">Choose how you want to handle this package</p>
+          </div>
 
+          {/* Deactivate */}
+          <Card className="p-4 border-2 border-orange-300">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
+                <FaTimesCircle className="text-xl text-orange-600" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-bold text-dark mb-1 flex items-center gap-2">
+                  Deactivate
+                  <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">RECOMMENDED</span>
+                </h4>
+                <p className="text-xs text-dark-light mb-3">Hide from public. Can be reactivated later.</p>
+                <Button
+                  onClick={handleDeactivateConfirm}
+                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-sm"
+                  disabled={deleting}
+                >
+                  {deleting ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Processing...</> : <><FaTimesCircle /> Deactivate Package</>}
+                </Button>
+              </div>
+            </div>
+          </Card>
 
+          {/* Hard Delete */}
+          <Card className="p-4 border-2 border-red-300">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                <FaTrash className="text-xl text-red-600" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-bold text-dark mb-1 flex items-center gap-2">
+                  Delete Permanently
+                  <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">IRREVERSIBLE</span>
+                </h4>
+                <p className="text-xs text-dark-light mb-3">
+                  <strong className="text-red-600">⚠️</strong> Deletes all data including Cloudinary photos. Cannot be undone.
+                </p>
+                <Button
+                  onClick={handlePermanentDeleteConfirm}
+                  className="w-full bg-gradient-to-r from-red-500 to-red-600 text-sm"
+                  disabled={deleting}
+                >
+                  {deleting ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Deleting...</> : <><FaTrash /> Delete Permanently</>}
+                </Button>
+              </div>
+            </div>
+          </Card>
 
-      {/* Toast Container */}
-      <ToastContainer 
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        closeOnClick
-        pauseOnHover
-        draggable
-        theme="light"
-      />
+          <Button variant="outline" onClick={handleCancelDelete} className="w-full border-2" disabled={deleting}>
+            Cancel
+          </Button>
+        </div>
+      </Modal>
 
+      <ToastContainer position="top-right" autoClose={3000} theme="light" />
 
       <style jsx>{`
         @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>
   );
 };
-
 
 export default PacksManagementPage;
