@@ -648,48 +648,47 @@ const response = await bookingsAPI.create(payload);  // ✅ payload au lieu de f
 
 
                   {/* Services */}
-                  {availableServices.length > 0 && (
-                    <div>
-                      <label className="block text-base sm:text-lg font-semibold text-dark mb-3 sm:mb-4 flex items-center gap-2 break-words">
-                        <FaStar className="text-primary flex-shrink-0" />
-                        <span>Additional Services {isPack && '(included in package)'}</span>
-                      </label>
-                      <div className="space-y-2 sm:space-y-3">
-                        {availableServices.map((service) => (
-                          <label
-                            key={service.id}
-                            className={`
-                              flex items-center gap-3 sm:gap-4 p-3 sm:p-4 border-2 rounded-xl transition-all
-                              ${formData.serviceIds.includes(service.id)
-                                ? 'bg-primary/10 border-primary'
-                                : 'border-accent hover:bg-accent/20'}
-                              ${isPack ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}
-                            `}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={formData.serviceIds.includes(service.id)}
-                              onChange={() => handleServiceToggle(service.id)}
-                              disabled={isPack}
-                              className="w-4 h-4 sm:w-5 sm:h-5 accent-primary flex-shrink-0"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="font-semibold text-dark text-sm sm:text-base break-words">{service.name}</div>
-                              <p className="text-[10px] sm:text-xs text-dark-light">
-                                {service.priceType === 'PER_NIGHT' ? 'Per night' : 'Fixed price'}
-                              </p>
-                            </div>
-                            <div className="text-right flex-shrink-0">
-                              <div className="font-bold text-primary text-sm sm:text-base whitespace-nowrap">{formatPrice(service.price)}</div>
-                              {service.priceType === 'PER_NIGHT' && (
-                                <span className="text-[10px] sm:text-xs text-dark-light">/night</span>
-                              )}
-                            </div>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  {/* Services — ✅ Caché pour les packs */}
+{!isPack && availableServices.length > 0 && (
+  <div>
+    <label className="block text-base sm:text-lg font-semibold text-dark mb-3 sm:mb-4 flex items-center gap-2 break-words">
+      <FaStar className="text-primary flex-shrink-0" />
+      <span>Additional Services</span>
+    </label>
+    <div className="space-y-2 sm:space-y-3">
+      {availableServices.map((service) => (
+        <label
+          key={service.id}
+          className={`
+            flex items-center gap-3 sm:gap-4 p-3 sm:p-4 border-2 rounded-xl cursor-pointer transition-all
+            ${formData.serviceIds.includes(service.id)
+              ? 'bg-primary/10 border-primary'
+              : 'border-accent hover:bg-accent/20'}
+          `}
+        >
+          <input
+            type="checkbox"
+            checked={formData.serviceIds.includes(service.id)}
+            onChange={() => handleServiceToggle(service.id)}
+            className="w-4 h-4 sm:w-5 sm:h-5 accent-primary flex-shrink-0"
+          />
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-dark text-sm sm:text-base break-words">{service.name}</div>
+            <p className="text-[10px] sm:text-xs text-dark-light">
+              {service.priceType === 'PER_NIGHT' ? 'Per night' : 'Fixed price'}
+            </p>
+          </div>
+          <div className="text-right flex-shrink-0">
+            <div className="font-bold text-primary text-sm sm:text-base whitespace-nowrap">{formatPrice(service.price)}</div>
+            {service.priceType === 'PER_NIGHT' && (
+              <span className="text-[10px] sm:text-xs text-dark-light">/night</span>
+            )}
+          </div>
+        </label>
+      ))}
+    </div>
+  </div>
+)}
 
                   {/* Infos client */}
                   <div className="border-t-2 border-accent/30 pt-6 sm:pt-8">
