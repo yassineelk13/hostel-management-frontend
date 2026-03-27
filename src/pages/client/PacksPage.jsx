@@ -1,25 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaCheck, FaBed, FaCar, FaUtensils, FaWater } from 'react-icons/fa';
-import Button from '../../components/common/Button';
+import { FaCheck, FaArrowRight } from 'react-icons/fa';
 import Loader from '../../components/common/Loader';
 import { packsAPI } from '../../services/api';
-import { bypassCloudinaryCache } from '../../utils/imageHelper';
 import { formatPrice } from '../../utils/priceFormatter';
-
-// Icône automatique selon le texte de la feature
-const getFeatureIcon = (text) => {
-  const t = text.toLowerCase();
-  if (t.includes('accommodation') || t.includes('night') || t.includes('room')) return <FaBed className="text-primary text-xs flex-shrink-0 mt-0.5" />;
-  if (t.includes('transfer') || t.includes('airport') || t.includes('transport')) return <FaCar className="text-primary text-xs flex-shrink-0 mt-0.5" />;
-  if (t.includes('meal') || t.includes('breakfast') || t.includes('dinner') || t.includes('food')) return <FaUtensils className="text-primary text-xs flex-shrink-0 mt-0.5" />;
-  return <FaWater className="text-primary text-xs flex-shrink-0 mt-0.5" />;
-};
-
-const getFromPrice = (pack) => {
-  const prices = [pack.dortoirPricePerNight, pack.singlePricePerNight, pack.doublePricePerNight].filter(Boolean);
-  return prices.length > 0 ? Math.min(...prices) : null;
-};
+import { bypassCloudinaryCache } from '../../utils/imageHelper';
 
 const PacksPage = () => {
   const [packs, setPacks] = useState([]);
@@ -31,7 +16,8 @@ const PacksPage = () => {
   const fetchPacks = async () => {
     try {
       const response = await packsAPI.getAll();
-      setPacks(response.data.data.filter(p => p.isActive !== false));
+      const activePacks = response.data.data.filter(p => p.isActive !== false);
+      setPacks(activePacks);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -39,90 +25,149 @@ const PacksPage = () => {
     }
   };
 
+  const getFromPrice = (pack) => {
+    const prices = [pack.priceDortoir, pack.priceSingle, pack.priceDouble].filter(Boolean);
+    return prices.length > 0 ? Math.min(...prices) : null;
+  };
+
+  const getRegularPrice = (pack) => {
+    const prices = [pack.regularPriceDortoir, pack.regularPriceSingle, pack.regularPriceDouble].filter(Boolean);
+    return prices.length > 0 ? Math.min(...prices) : null;
+  };
+
+  if (loading) return <Loader />;
+
   return (
     <div className="min-h-screen bg-[#f5f0eb]">
 
-      {/* Header simple */}
-      <div className="pt-24 pb-10 text-center px-4">
-        <h1 className="text-4xl sm:text-5xl font-display font-bold text-dark mb-3">
-          Packages
-        </h1>
-        <p className="text-dark-light text-sm sm:text-base">
-          Find the perfect surf experience for you.
+      {/* ── Hero Header ── */}
+      <div className="pt-28 pb-16 px-4 sm:px-8 max-w-5xl mx-auto text-center">
+        <p className="text-xs font-bold tracking-[0.3em] text-primary uppercase mb-4">
+          Shams House · Morocco
         </p>
+        <h1 className="text-5xl md:text-6xl font-display font-bold text-dark mb-5 leading-tight">
+          Our Packages
+        </h1>
+        <p className="text-dark-light text-lg max-w-xl mx-auto leading-relaxed">
+          Everything you need for the perfect surf getaway — accommodation, coaching & more.
+        </p>
+        <div className="w-16 h-px bg-dark/20 mx-auto mt-8" />
       </div>
 
-      {/* Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-20">
-        {loading ? (
-          <Loader />
-        ) : packs.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-dark-light text-lg">No packages available at the moment.</p>
+      {/* ── Pack List ── */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 pb-28">
+        {packs.length === 0 ? (
+          <div className="text-center py-20 text-dark-light">
+            No packages available at the moment.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {packs.map((pack) => (
-              <div
-                key={pack.id}
-                className="bg-[#ede8e2] rounded-sm overflow-hidden flex flex-col hover:shadow-lg transition-shadow duration-300"
-              >
-                {/* Image */}
-                <div className="h-52 sm:h-60 overflow-hidden bg-accent/20 flex-shrink-0">
-                  {pack.photos && pack.photos.length > 0 ? (
-                    <img
-                      src={bypassCloudinaryCache(pack.photos[0])}
-                      alt={pack.name}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <FaWater className="text-5xl text-white/30" />
+          <div className="space-y-0">
+            {packs.map((pack, index) => {
+              const fromPrice = getFromPrice(pack);
+              const regularPrice = getRegularPrice(pack);
+
+              return (
+                <div key={pack.id}>
+                  {/* ── Pack Row ── */}
+                  <div className="grid md:grid-cols-2 gap-0 py-16 md:py-20">
+
+                    {/* Image — alternating left/right */}
+                    <div className={`relative overflow-hidden ${index % 2 === 1 ? 'md:order-2' : ''}`}>
+                      <div className="aspect-[3/4] md:aspect-auto md:h-full min-h-[420px] overflow-hidden bg-dark/10">
+                        {pack.photos && pack.photos.length > 0 ? (
+                          <img
+                            src={bypassCloudinaryCache(pack.photos[0])}
+                            alt={pack.name}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+                            <span className="text-8xl opacity-20">🏄</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Content */}
+                    <div className={`flex flex-col justify-center px-0 md:px-12 lg:px-16 py-8 md:py-0 ${index % 2 === 1 ? 'md:order-1' : ''}`}>
+
+                      {/* Pack name */}
+                      <h2 className="text-3xl md:text-4xl font-display font-bold text-dark mb-4 leading-tight">
+                        {pack.name}
+                      </h2>
+
+                      {/* Description */}
+                      <p className="text-dark-light text-sm md:text-base leading-relaxed mb-8">
+                        {pack.description}
+                      </p>
+
+                      {/* What's included */}
+                      {pack.includedFeatures && pack.includedFeatures.length > 0 && (
+                        <div className="mb-8">
+                          <p className="text-xs font-bold tracking-[0.2em] text-dark/50 uppercase mb-4">
+                            What's included?
+                          </p>
+                          <ul className="space-y-2.5">
+                            {pack.includedFeatures.map((feature, i) => (
+                              <li key={i} className="flex items-start gap-3 text-sm text-dark-light">
+                                <FaCheck className="text-primary mt-0.5 flex-shrink-0 text-[10px]" />
+                                <span>{feature}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Price */}
+                      <div className="mb-8 pb-8 border-b border-dark/10">
+                        <p className="text-xs text-dark/40 mb-1 uppercase tracking-widest">
+                          3 – 10 nights
+                        </p>
+                        {fromPrice && (
+                          <div className="flex items-baseline gap-2">
+                            {regularPrice && regularPrice > fromPrice && (
+                              <span className="text-dark/40 text-sm line-through">
+                                from {formatPrice(regularPrice)}
+                              </span>
+                            )}
+                            <p className="text-dark/60 text-base">
+                              from{' '}
+                              <span className="text-4xl font-display font-bold text-primary">
+                                {formatPrice(fromPrice)}
+                              </span>
+                              {' '}<span className="text-sm text-dark/50">/ person / night</span>
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Buttons — exactement comme la photo */}
+                      <div className="flex items-center gap-4">
+                        <button
+                          onClick={() => navigate(`/packs/${pack.id}`)}
+                          className="bg-primary text-white px-8 py-3.5 rounded-full text-sm font-bold hover:bg-primary-dark transition-colors shadow-md hover:shadow-lg"
+                        >
+                          Book Now
+                        </button>
+                        <Link
+                          to={`/packs/${pack.id}`}
+                          className="flex items-center gap-2.5 text-sm font-semibold text-dark hover:text-primary transition-colors group border-2 border-dark/20 hover:border-primary px-6 py-3 rounded-full"
+                        >
+                          More Info
+                          <FaArrowRight className="text-xs group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                      </div>
+
+                    </div>
+                  </div>
+
+                  {/* Separator */}
+                  {index < packs.length - 1 && (
+                    <div className="w-full h-px bg-dark/10" />
                   )}
                 </div>
-
-                {/* Body */}
-                <div className="p-5 sm:p-6 flex flex-col flex-1">
-
-                  {/* Title */}
-                  <h3 className="text-sm font-bold tracking-widest text-dark uppercase mb-3">
-                    {pack.name}
-                  </h3>
-
-                  {/* Description */}
-                  <p className="text-dark-light text-xs sm:text-sm leading-relaxed mb-5 line-clamp-3">
-                    {pack.description}
-                  </p>
-
-                  {/* Features */}
-                  {pack.features && pack.features.length > 0 && (
-                    <ul className="space-y-2 mb-6 flex-1">
-                      {pack.features.map((feature, i) => (
-                        <li key={i} className="flex items-start gap-2.5 text-xs sm:text-sm text-dark-light">
-                          {getFeatureIcon(feature)}
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
-                  {/* Price hint */}
-                  {getFromPrice(pack) && (
-                    <p className="text-xs text-dark/40 mb-3 text-center">
-                      from <span className="text-primary font-semibold">{formatPrice(getFromPrice(pack))}</span> / night · 3–10 nights
-                    </p>
-                  )}
-
-                  {/* Book Now button */}
-                  <Link to={`/packs/${pack.id}`} className="mt-auto">
-                    <Button variant="primary" className="w-full rounded-sm font-semibold tracking-wide">
-                      Book Now
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
