@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { FaCheck, FaArrowRight } from 'react-icons/fa';
 import Loader from '../common/Loader';
 import Button from '../common/Button';
@@ -11,7 +11,6 @@ const FeaturedPacks = () => {
   const [packs, setPacks] = useState([]);
   const [totalPacks, setTotalPacks] = useState(0);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => { fetchPacks(); }, []);
 
@@ -28,12 +27,12 @@ const FeaturedPacks = () => {
     }
   };
 
-  // Prix minimum parmi les 3 types de chambre
+  // ✅ CORRIGÉ : priceDortoir / priceSingle / priceDouble
   const getFromPrice = (pack) => {
     const prices = [
-      pack.dortoirPricePerNight,
-      pack.singlePricePerNight,
-      pack.doublePricePerNight,
+      pack.priceDortoir,
+      pack.priceSingle,
+      pack.priceDouble,
     ].filter(Boolean);
     return prices.length > 0 ? Math.min(...prices) : null;
   };
@@ -60,7 +59,6 @@ const FeaturedPacks = () => {
         <div className="space-y-0">
           {packs.map((pack, index) => (
             <div key={pack.id}>
-              {/* Pack Row */}
               <div className="flex flex-col md:flex-row gap-8 md:gap-16 py-14">
 
                 {/* Image */}
@@ -83,7 +81,6 @@ const FeaturedPacks = () => {
                 {/* Content */}
                 <div className="flex-1 flex flex-col justify-center py-2">
 
-                  {/* Name + Description */}
                   <h3 className="text-3xl md:text-4xl font-display font-bold text-dark mb-3">
                     {pack.name}
                   </h3>
@@ -91,14 +88,14 @@ const FeaturedPacks = () => {
                     {pack.description}
                   </p>
 
-                  {/* Features */}
-                  {pack.features && pack.features.length > 0 && (
+                  {/* ✅ CORRIGÉ : includedFeatures */}
+                  {pack.includedFeatures && pack.includedFeatures.length > 0 && (
                     <div className="mb-8">
                       <p className="text-xs font-bold tracking-widest text-dark/50 uppercase mb-4">
                         What's included?
                       </p>
                       <ul className="space-y-2">
-                        {pack.features.map((feature, i) => (
+                        {pack.includedFeatures.map((feature, i) => (
                           <li key={i} className="flex items-start gap-3 text-sm text-dark-light">
                             <FaCheck className="text-primary mt-0.5 flex-shrink-0 text-xs" />
                             <span>{feature}</span>
@@ -111,7 +108,6 @@ const FeaturedPacks = () => {
                   {/* Price + Buttons */}
                   <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mt-auto pt-6 border-t border-dark/10">
 
-                    {/* Price */}
                     <div>
                       <p className="text-xs text-dark/40 mb-1 uppercase tracking-widest">
                         3 – 10 nights
@@ -127,7 +123,6 @@ const FeaturedPacks = () => {
                       )}
                     </div>
 
-                    {/* Buttons */}
                     <div className="flex items-center gap-4">
                       <Link to={`/packs/${pack.id}`}>
                         <Button variant="primary" className="shadow-md hover:shadow-lg px-6">
@@ -147,7 +142,6 @@ const FeaturedPacks = () => {
                 </div>
               </div>
 
-              {/* Separator — pas après le dernier */}
               {index < packs.length - 1 && (
                 <div className="w-full h-px bg-dark/10" />
               )}
@@ -155,7 +149,6 @@ const FeaturedPacks = () => {
           ))}
         </div>
 
-        {/* All packs button */}
         {totalPacks > 3 && (
           <div className="text-center mt-16">
             <Link to="/packs">

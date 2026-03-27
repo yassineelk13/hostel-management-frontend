@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaCheck, FaCalendar, FaArrowLeft, FaBed, FaStar, FaChevronLeft, FaChevronRight, FaGift, FaClock } from 'react-icons/fa';
+import { FaCheck, FaArrowLeft, FaBed, FaChevronLeft, FaChevronRight, FaMoon } from 'react-icons/fa';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Loader from '../../components/common/Loader';
@@ -8,21 +8,29 @@ import { packsAPI } from '../../services/api';
 import { formatPrice } from '../../utils/priceFormatter';
 import { bypassCloudinaryCache } from '../../utils/imageHelper';
 
+// Dropdown 3 → 10 nuits
+const NIGHTS_OPTIONS = Array.from({ length: 8 }, (_, i) => i + 3);
 
+const ROOM_TYPES = [
+  { key: 'DORTOIR', label: 'Dormitory', priceField: 'priceDortoir', regularField: 'regularPriceDortoir' },
+  { key: 'SINGLE',  label: 'Single',    priceField: 'priceSingle',  regularField: 'regularPriceSingle'  },
+  { key: 'DOUBLE',  label: 'Double',    priceField: 'priceDouble',  regularField: 'regularPriceDouble'  },
+];
 
 const PackDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [pack, setPack] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  // ✅ Booking state
+  const [selectedRoomType, setSelectedRoomType] = useState(null);
+  const [selectedNights, setSelectedNights] = useState('');
+  const [checkInDate, setCheckInDate] = useState('');
 
-  useEffect(() => {
-    fetchPack();
-  }, [id]);
-
+  useEffect(() => { fetchPack(); }, [id]);
 
   const fetchPack = async () => {
     try {
@@ -37,348 +45,331 @@ const PackDetailPage = () => {
     }
   };
 
-
+  // ── Image navigation ──
   const nextImage = () => {
     if (!pack?.photos) return;
-    setCurrentImageIndex((prev) => (prev === pack.photos.length - 1 ? 0 : prev + 1));
+    setCurrentImageIndex(prev => prev === pack.photos.length - 1 ? 0 : prev + 1);
   };
-
-
   const prevImage = () => {
     if (!pack?.photos) return;
-    setCurrentImageIndex((prev) => (prev === 0 ? pack.photos.length - 1 : prev - 1));
+    setCurrentImageIndex(prev => prev === 0 ? pack.photos.length - 1 : prev - 1);
   };
 
+  // ── Calculs ──
+  const getPromoPrice = () => {
+    if (!selectedRoomType || !pack) return null;
+    const rt = ROOM_TYPES.find(r => r.key === selectedRoomType);
+    return rt ? pack[rt.priceField] : null;
+  };
 
+  const getRegularPrice = () => {
+    if (!selectedRoomType || !pack) return null;
+    const rt = ROOM_TYPES.find(r => r.key === selectedRoomType);
+    return rt ? pack[rt.regularField] : null;
+  };
+
+  const totalPrice = selectedRoomType && selectedNights
+    ? (getPromoPrice() || 0) * parseInt(selectedNights)
+    : null;
+
+  // ── Check-out auto-calculé ──
+  const checkOutDate = checkInDate && selectedNights
+    ? (() => {
+        const d = new Date(checkInDate);
+        d.setDate(d.getDate() + parseInt(selectedNights));
+        return d.toISOString().split('T')[0];
+      })()
+    : null;
+
+  // ── Booking ──
   const handleBooking = () => {
-    if (!selectedDate) {
-      alert('Please select an arrival date');
-      return;
-    }
-
-
-    const checkIn = new Date(selectedDate);
-    const checkOut = new Date(checkIn);
-    checkOut.setDate(checkOut.getDate() + pack.durationDays);
-
+    if (!selectedRoomType) { alert('Please select a room type'); return; }
+    if (!selectedNights)   { alert('Please select number of nights'); return; }
+    if (!checkInDate)      { alert('Please select an arrival date'); return; }
 
     navigate('/booking', {
       state: {
         packId: pack.id,
         packName: pack.name,
-        roomType: pack.roomType,
-        checkIn: selectedDate,
-        checkOut: checkOut.toISOString().split('T')[0],
-        services: pack.includedServices.map(s => s.id),
-        totalPrice: pack.promoPrice,
+        roomType: selectedRoomType,
+        checkIn: checkInDate,
+        checkOut: checkOutDate,
+        nights: parseInt(selectedNights),
+        pricePerNight: getPromoPrice(),
+        totalPrice: totalPrice,
         isPack: true
       }
     });
   };
 
-
   if (loading) return <Loader />;
-  
+
   if (!pack) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <Card className="p-8 sm:p-12 text-center">
-          <p className="text-lg sm:text-xl text-dark-light mb-4 sm:mb-6">Package not found</p>
+      <div className="min-h-screen bg-[#f5f0eb] flex items-center justify-center px-4">
+        <Card className="p-10 text-center">
+          <p className="text-dark-light mb-4">Package not found</p>
           <Button onClick={() => navigate('/packs')}>Back to Packages</Button>
         </Card>
       </div>
     );
   }
 
-
-  const discountPercent = pack.originalPrice 
-    ? Math.round((1 - pack.promoPrice / pack.originalPrice) * 100) 
-    : 0;
-
-
   return (
-    <div className="min-h-screen bg-background">
-<div className="relative bg-gradient-to-r from-primary via-primary-dark to-primary text-white py-16 sm:py-20 md:py-24 overflow-hidden">
-  <div className="absolute inset-0 opacity-10">
-    <div className="absolute top-5 sm:top-10 left-5 sm:left-10 w-20 sm:w-32 h-20 sm:h-32 border-2 sm:border-4 border-white rounded-full" />
-    <div className="absolute bottom-5 sm:bottom-10 right-10 sm:right-20 w-24 sm:w-40 h-24 sm:h-40 border-2 sm:border-4 border-white rounded-full" />
-    <div className="absolute top-1/2 right-1/3 w-16 sm:w-24 h-16 sm:h-24 border-2 sm:border-4 border-white rounded-full hidden sm:block" />
-  </div>
-  
-  <div className="container-custom relative z-10 px-4 sm:px-6">
-    <button 
-      onClick={() => navigate('/packs')}
-      className="flex items-center gap-2 text-white/90 hover:text-white mb-3 sm:mb-4 transition-colors text-sm sm:text-base"
-    >
-      <FaArrowLeft className="text-xs sm:text-sm flex-shrink-0" />
-      Back to Packages
-    </button>
-    
-    <h1 className="text-3xl sm:text-4xl md:text-5xl font-display font-bold break-words hyphens-auto max-w-full">
-      {pack.name}
-    </h1>
-    
-    {discountPercent > 0 && (
-      <div className="mt-3 inline-flex items-center gap-2 bg-red-500 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-bold text-xs sm:text-sm flex-wrap">
-        <FaGift className="text-xs sm:text-sm flex-shrink-0" />
-        <span className="whitespace-nowrap">-{discountPercent}% discount</span>
+    <div className="min-h-screen bg-[#f5f0eb]">
+
+      {/* ── Header ── */}
+      <div className="pt-24 pb-10 px-4 sm:px-8 max-w-6xl mx-auto">
+        <button
+          onClick={() => navigate('/packs')}
+          className="flex items-center gap-2 text-dark-light hover:text-dark transition-colors text-sm mb-6"
+        >
+          <FaArrowLeft className="text-xs" />
+          Back to Packages
+        </button>
+        <h1 className="text-4xl sm:text-5xl font-display font-bold text-dark">{pack.name}</h1>
       </div>
-    )}
-  </div>
-</div>
 
+      {/* ── Body ── */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 pb-20">
+        <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
 
+          {/* ── LEFT : Pack info ── */}
+          <div className="lg:col-span-2 space-y-8">
 
-      <div className="container-custom py-8 sm:py-10 md:py-12 px-4 sm:px-6">
-        <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
-          <div className="lg:col-span-2 space-y-6 md:space-y-8">
+            {/* Galerie photos */}
             {pack.photos && pack.photos.length > 0 && (
-              <Card className="overflow-hidden">
-                <div className="relative h-64 sm:h-80 md:h-96 bg-accent group">
-                 <img
-                    src={bypassCloudinaryCache(pack.photos[currentImageIndex])}
-                    alt={pack.name}
-                    className="w-full h-full object-cover transition-opacity duration-500"
-                  />
-
-
-                  {pack.photos.length > 1 && (
-                    <>
-                      <button
-                        onClick={prevImage}
-                        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 sm:p-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity touch-manipulation"
-                        aria-label="Previous image"
-                      >
-                        <FaChevronLeft className="text-base sm:text-xl" />
-                      </button>
-                      <button
-                        onClick={nextImage}
-                        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 sm:p-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity touch-manipulation"
-                        aria-label="Next image"
-                      >
-                        <FaChevronRight className="text-base sm:text-xl" />
-                      </button>
-
-
-                      <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 sm:gap-2">
-                        {pack.photos.map((_, index) => (
-                          <button
-                            key={index}
-                            onClick={() => setCurrentImageIndex(index)}
-                            className={`h-2 sm:h-2 rounded-full transition-all touch-manipulation ${
-                              index === currentImageIndex 
-                                ? 'bg-white w-6 sm:w-8' 
-                                : 'bg-white/50 w-2 hover:bg-white/75'
-                            }`}
-                            aria-label={`Go to image ${index + 1}`}
-                          />
-                        ))}
-                      </div>
-
-
-                      <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-black/50 text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm">
-                        {currentImageIndex + 1} / {pack.photos.length}
-                      </div>
-                    </>
-                  )}
-                </div>
-              </Card>
+              <div className="relative aspect-[16/9] rounded-sm overflow-hidden bg-accent/20 group">
+                <img
+                  src={bypassCloudinaryCache(pack.photos[currentImageIndex])}
+                  alt={pack.name}
+                  className="w-full h-full object-cover transition-opacity duration-500"
+                />
+                {pack.photos.length > 1 && (
+                  <>
+                    <button
+                      onClick={prevImage}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <FaChevronLeft />
+                    </button>
+                    <button
+                      onClick={nextImage}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <FaChevronRight />
+                    </button>
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                      {pack.photos.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setCurrentImageIndex(i)}
+                          className={`h-2 rounded-full transition-all ${
+                            i === currentImageIndex ? 'bg-white w-6' : 'bg-white/50 w-2'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <div className="absolute top-3 right-3 bg-black/50 text-white px-2.5 py-1 rounded-full text-xs">
+                      {currentImageIndex + 1} / {pack.photos.length}
+                    </div>
+                  </>
+                )}
+              </div>
             )}
 
-
-            <Card className="p-5 sm:p-6 md:p-8">
-              <h2 className="text-xl sm:text-2xl font-bold text-dark mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3">
-                <div className="w-1 h-6 sm:h-8 bg-primary rounded-full" />
-                About this Package
-              </h2>
-              <p className="text-dark-light leading-relaxed text-sm sm:text-base md:text-lg">
-                {pack.description}
-              </p>
-            </Card>
-
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <Card className="p-4 sm:p-6 border-2 border-blue-200 bg-blue-50">
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="bg-blue-500 p-3 sm:p-4 rounded-xl flex-shrink-0">
-                    <FaCalendar className="text-2xl sm:text-3xl text-white" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs sm:text-sm text-dark-light mb-1">Stay Duration</div>
-                    <div className="text-xl sm:text-2xl font-bold text-dark">
-                      {pack.durationDays} day{pack.durationDays > 1 ? 's' : ''}
-                    </div>
-                  </div>
-                </div>
-              </Card>
-
-
-              <Card className="p-4 sm:p-6 border-2 border-purple-200 bg-purple-50">
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="bg-purple-500 p-3 sm:p-4 rounded-xl flex-shrink-0">
-                    <FaBed className="text-2xl sm:text-3xl text-white" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs sm:text-sm text-dark-light mb-1">Room Type</div>
-                    <div className="text-xl sm:text-2xl font-bold text-dark">
-                      {pack.roomType === 'SINGLE' ? 'Single' : 
-                       pack.roomType === 'DOUBLE' ? 'Double' : 'Dormitory'}
-                    </div>
-                  </div>
-                </div>
-              </Card>
+            {/* Description */}
+            <div>
+              <h2 className="text-xl font-bold text-dark mb-3">About this Package</h2>
+              <p className="text-dark-light leading-relaxed text-sm sm:text-base">{pack.description}</p>
             </div>
 
-
-            {pack.includedServices && pack.includedServices.length > 0 && (
-              <Card className="p-5 sm:p-6 md:p-8 border-2 border-primary/20">
-                <h3 className="text-xl sm:text-2xl font-bold text-dark mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
-                  <FaStar className="text-primary text-lg sm:text-xl" />
-                  Services Included in this Package
+            {/* ✅ Features (strings) */}
+            {pack.includedFeatures && pack.includedFeatures.length > 0 && (
+              <div>
+                <h3 className="text-xs font-bold tracking-widest text-dark/50 uppercase mb-4">
+                  What's included?
                 </h3>
-                <div className="space-y-3 sm:space-y-4">
-                  {pack.includedServices.map(service => (
-                    <div 
-                      key={service.id} 
-                      className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 bg-accent/20 rounded-lg hover:bg-accent/30 transition-colors"
-                    >
-                      <div className="flex-shrink-0 w-6 sm:w-8 h-6 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <FaCheck className="text-primary text-xs sm:text-sm" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-dark mb-1 text-sm sm:text-base break-words">{service.name}</div>
-                        {service.description && (
-                          <p className="text-xs sm:text-sm text-dark-light break-words">{service.description}</p>
-                        )}
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <div className="text-xs sm:text-sm text-dark-light line-through">
-                          {formatPrice(service.price)}
-                        </div>
-                        <div className="text-[10px] sm:text-xs text-green-600 font-semibold">Included</div>
-                      </div>
-                    </div>
+                <ul className="space-y-3">
+                  {pack.includedFeatures.map((feature, i) => (
+                    <li key={i} className="flex items-start gap-3 text-sm text-dark-light">
+                      <FaCheck className="text-primary mt-0.5 flex-shrink-0 text-xs" />
+                      <span>{feature}</span>
+                    </li>
                   ))}
-                </div>
-              </Card>
+                </ul>
+              </div>
             )}
 
+            {/* ✅ Prix par room type (informatif) */}
+            <div>
+              <h3 className="text-xs font-bold tracking-widest text-dark/50 uppercase mb-4">
+                Prices per night
+              </h3>
+              <div className="space-y-2">
+                {ROOM_TYPES.map(({ key, label, priceField, regularField }) => pack[priceField] && (
+                  <div key={key} className="flex items-center justify-between py-2 border-b border-dark/10 last:border-0">
+                    <div className="flex items-center gap-2">
+                      <FaBed className="text-primary/50 text-xs" />
+                      <span className="text-sm text-dark">{label}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {pack[regularField] && (
+                        <span className="text-xs text-dark-light line-through opacity-60">
+                          {formatPrice(pack[regularField])}/night
+                        </span>
+                      )}
+                      <span className="text-sm font-bold text-primary">
+                        {formatPrice(pack[priceField])}/night
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-            {pack.originalPrice && (
-              <Card className="p-4 sm:p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200">
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="bg-green-500 p-3 sm:p-4 rounded-xl flex-shrink-0">
-                    <FaGift className="text-2xl sm:text-3xl text-white" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs sm:text-sm text-green-700 mb-1">Your Savings</div>
-                    <div className="text-2xl sm:text-3xl font-bold text-green-800">
-                      {formatPrice(pack.originalPrice - pack.promoPrice)}
-                    </div>
-                    <div className="text-xs sm:text-sm text-green-600">
-                      {discountPercent}% discount on the regular price
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            )}
           </div>
 
-
+          {/* ── RIGHT : Booking form ── */}
           <div className="lg:col-span-1">
-            <Card className="p-5 sm:p-6 lg:sticky lg:top-24 border-2 border-primary/20 shadow-2xl">
-              <div className="text-center mb-5 sm:mb-6">
-                {pack.originalPrice && (
-                  <div className="text-base sm:text-lg text-dark-light line-through mb-1">
-                    {formatPrice(pack.originalPrice)}
-                  </div>
-                )}
-                <div className="text-3xl sm:text-4xl font-bold text-primary mb-2">
-                  {formatPrice(pack.promoPrice)}
-                </div>
-                <div className="text-xs sm:text-sm text-dark-light">
-                  for {pack.durationDays} day{pack.durationDays > 1 ? 's' : ''}
+            <Card className="p-5 sm:p-6 lg:sticky lg:top-24 border border-dark/10 shadow-xl bg-white">
+
+              <h3 className="text-base font-bold text-dark mb-5 pb-3 border-b border-dark/10">
+                Book this Package
+              </h3>
+
+              {/* Section 1 : Room type */}
+              <div className="mb-5">
+                <p className="text-xs font-bold tracking-widest text-dark/50 uppercase mb-3 flex items-center gap-2">
+                  <FaBed className="text-primary" /> Room type
+                </p>
+                <div className="space-y-2">
+                  {ROOM_TYPES.map(({ key, label, priceField, regularField }) => pack[priceField] && (
+                    <label
+                      key={key}
+                      className={`flex items-center justify-between p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                        selectedRoomType === key
+                          ? 'border-primary bg-primary/5'
+                          : 'border-gray-200 hover:border-primary/40'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="radio"
+                          name="roomType"
+                          value={key}
+                          checked={selectedRoomType === key}
+                          onChange={() => setSelectedRoomType(key)}
+                          className="accent-primary"
+                        />
+                        <span className="text-sm font-medium text-dark">{label}</span>
+                      </div>
+                      <div className="text-right">
+                        {pack[regularField] && (
+                          <div className="text-[10px] text-dark-light line-through opacity-60">
+                            {formatPrice(pack[regularField])}/night
+                          </div>
+                        )}
+                        <div className="text-sm font-bold text-primary">
+                          {formatPrice(pack[priceField])}/night
+                        </div>
+                      </div>
+                    </label>
+                  ))}
                 </div>
               </div>
 
+              {/* Section 2 : Nombre de nuits */}
+              <div className="mb-5">
+                <p className="text-xs font-bold tracking-widest text-dark/50 uppercase mb-3 flex items-center gap-2">
+                  <FaMoon className="text-primary" /> Number of nights
+                </p>
+                <select
+                  value={selectedNights}
+                  onChange={e => setSelectedNights(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none text-sm text-dark bg-white"
+                >
+                  <option value="">Select...</option>
+                  {NIGHTS_OPTIONS.map(n => (
+                    <option key={n} value={n}>{n} night{n > 1 ? 's' : ''}</option>
+                  ))}
+                </select>
+              </div>
 
-              <div className="h-px bg-accent/30 my-5 sm:my-6" />
-
-
-              <div className="space-y-4 mb-5 sm:mb-6">
+              {/* Section 3 : Dates */}
+              <div className="mb-5 space-y-3">
                 <div>
-                  <label className="block text-xs sm:text-sm font-semibold text-dark mb-2 flex items-center gap-2">
-                    <FaClock className="text-primary text-xs sm:text-sm" />
-                    Arrival Date <span className="text-red-500">*</span>
+                  <label className="block text-xs font-bold tracking-widest text-dark/50 uppercase mb-2">
+                    📅 Arrival date
                   </label>
                   <input
                     type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
+                    value={checkInDate}
+                    onChange={e => setCheckInDate(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-accent rounded-lg focus:border-primary focus:outline-none transition-colors text-sm sm:text-base"
-                    required
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none text-sm"
                   />
                 </div>
 
-
-                {selectedDate && (
-                  <Card className="p-3 sm:p-4 bg-primary/5 border-2 border-primary/20">
-                    <div className="space-y-2 text-xs sm:text-sm">
-                      <div className="flex justify-between gap-2">
-                        <span className="text-dark-light">✅ Arrival</span>
-                        <span className="font-semibold text-dark text-right">
-                          {new Date(selectedDate).toLocaleDateString('en-US', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric'
-                          })}
-                        </span>
-                      </div>
-                      <div className="flex justify-between gap-2">
-                        <span className="text-dark-light">❌ Departure</span>
-                        <span className="font-semibold text-dark text-right">
-                          {new Date(new Date(selectedDate).setDate(
-                            new Date(selectedDate).getDate() + pack.durationDays
-                          )).toLocaleDateString('en-US', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric'
-                          })}
-                        </span>
-                      </div>
+                {checkOutDate && (
+                  <div>
+                    <label className="block text-xs font-bold tracking-widest text-dark/50 uppercase mb-2">
+                      📅 Departure (auto)
+                    </label>
+                    <div className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl bg-gray-50 text-sm text-dark-light">
+                      {new Date(checkOutDate).toLocaleDateString('en-US', {
+                        day: 'numeric', month: 'long', year: 'numeric'
+                      })}
                     </div>
-                  </Card>
+                  </div>
                 )}
               </div>
 
+              {/* Section 4 : Total estimé */}
+              {totalPrice !== null && (
+                <div className="mb-5 p-4 bg-primary/5 border-2 border-primary/20 rounded-xl">
+                  <p className="text-xs font-bold tracking-widest text-dark/50 uppercase mb-2">
+                    💰 Estimated total
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-dark-light">
+                      {ROOM_TYPES.find(r => r.key === selectedRoomType)?.label} × {selectedNights} nights
+                    </span>
+                    <span className="text-2xl font-bold text-primary">
+                      {formatPrice(totalPrice)}
+                    </span>
+                  </div>
+                </div>
+              )}
 
-              <Button 
+              {/* Button */}
+              <Button
                 onClick={handleBooking}
-                className="w-full mb-4 shadow-xl hover:shadow-2xl text-sm sm:text-base"
-                disabled={!selectedDate}
+                className="w-full shadow-lg hover:shadow-xl"
+                disabled={!selectedRoomType || !selectedNights || !checkInDate}
               >
-                Book this Package
+                Confirm Reservation
               </Button>
 
-
-              <div className="space-y-2 text-xs text-dark-light text-center">
+              {/* Trust signals */}
+              <div className="mt-4 space-y-1.5 text-xs text-dark-light text-center">
                 <p className="flex items-center justify-center gap-2">
                   <FaCheck className="text-green-500 flex-shrink-0" />
-                  <span>Instant confirmation by email</span>
+                  Instant confirmation by email
                 </p>
                 <p className="flex items-center justify-center gap-2">
                   <FaCheck className="text-green-500 flex-shrink-0" />
-                  <span>Payment on arrival</span>
+                  Payment on arrival
                 </p>
               </div>
+
             </Card>
           </div>
+
         </div>
       </div>
     </div>
   );
 };
-
 
 export default PackDetailPage;

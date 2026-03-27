@@ -7,7 +7,7 @@ import Input from '../../components/common/Input';
 import Modal from '../../components/common/Modal';
 import ImageUpload from '../../components/common/ImageUpload';
 import Loader from '../../components/common/Loader';
-import { packsAPI, roomsAPI } from '../../services/api'; // ✅ servicesAPI supprimé
+import { packsAPI, roomsAPI } from '../../services/api';
 import { formatPrice } from '../../utils/priceFormatter';
 import { bypassCloudinaryCache } from '../../utils/imageHelper';
 import { toast, ToastContainer } from 'react-toastify';
@@ -16,10 +16,13 @@ import 'react-toastify/dist/ReactToastify.css';
 const EMPTY_FORM = {
   name: '',
   description: '',
-  dortoirPricePerNight: '',
-  singlePricePerNight: '',
-  doublePricePerNight: '',
-  features: [],
+  priceDortoir: '',
+  regularPriceDortoir: '',
+  priceSingle: '',
+  regularPriceSingle: '',
+  priceDouble: '',
+  regularPriceDouble: '',
+  includedFeatures: [],
   photos: []
 };
 
@@ -31,6 +34,7 @@ const PacksManagementPage = () => {
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [showModal, setShowModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showFeatureInput, setShowFeatureInput] = useState(false); // ✅ AJOUTÉ
   const [packToDelete, setPackToDelete] = useState(null);
   const [editingPack, setEditingPack] = useState(null);
   const [newFeature, setNewFeature] = useState('');
@@ -52,18 +56,19 @@ const PacksManagementPage = () => {
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const handlePhotosChange = (photos) => setFormData({ ...formData, photos });
 
-  // ===== FEATURES =====
+  // ===== FEATURES ===== ✅ CORRIGÉ : features → includedFeatures
   const handleAddFeature = () => {
     const trimmed = newFeature.trim();
     if (!trimmed) return;
-    setFormData(prev => ({ ...prev, features: [...prev.features, trimmed] }));
+    setFormData(prev => ({ ...prev, includedFeatures: [...prev.includedFeatures, trimmed] }));
     setNewFeature('');
+    setShowFeatureInput(false);
   };
 
   const handleRemoveFeature = (index) => {
     setFormData(prev => ({
       ...prev,
-      features: prev.features.filter((_, i) => i !== index)
+      includedFeatures: prev.includedFeatures.filter((_, i) => i !== index)
     }));
   };
 
@@ -75,12 +80,11 @@ const PacksManagementPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation 3 prix obligatoires
-    if (!formData.dortoirPricePerNight || !formData.singlePricePerNight || !formData.doublePricePerNight) {
+    if (!formData.priceDortoir || !formData.priceSingle || !formData.priceDouble) {
       toast.error('❌ All 3 room type prices are required!');
       return;
     }
-    if (formData.features.length === 0) {
+    if (formData.includedFeatures.length === 0) {
       toast.error('❌ Add at least one feature!');
       return;
     }
@@ -109,10 +113,13 @@ const PacksManagementPage = () => {
       const dataToSend = {
         name: formData.name,
         description: formData.description,
-        dortoirPricePerNight: parseFloat(formData.dortoirPricePerNight),
-        singlePricePerNight: parseFloat(formData.singlePricePerNight),
-        doublePricePerNight: parseFloat(formData.doublePricePerNight),
-        features: formData.features,
+        priceDortoir: parseFloat(formData.priceDortoir),
+        regularPriceDortoir: formData.regularPriceDortoir ? parseFloat(formData.regularPriceDortoir) : null,
+        priceSingle: parseFloat(formData.priceSingle),
+        regularPriceSingle: formData.regularPriceSingle ? parseFloat(formData.regularPriceSingle) : null,
+        priceDouble: parseFloat(formData.priceDouble),
+        regularPriceDouble: formData.regularPriceDouble ? parseFloat(formData.regularPriceDouble) : null,
+        includedFeatures: formData.includedFeatures,
         photos: photoUrls
       };
 
@@ -134,16 +141,19 @@ const PacksManagementPage = () => {
     }
   };
 
-  // ===== EDIT =====
+  // ===== EDIT ===== ✅ CORRIGÉ : bons noms de champs
   const handleEdit = (pack) => {
     setEditingPack(pack);
     setFormData({
       name: pack.name,
       description: pack.description,
-      dortoirPricePerNight: pack.dortoirPricePerNight?.toString() || '',
-      singlePricePerNight: pack.singlePricePerNight?.toString() || '',
-      doublePricePerNight: pack.doublePricePerNight?.toString() || '',
-      features: pack.features || [],
+      priceDortoir: pack.priceDortoir?.toString() || '',
+      regularPriceDortoir: pack.regularPriceDortoir?.toString() || '',
+      priceSingle: pack.priceSingle?.toString() || '',
+      regularPriceSingle: pack.regularPriceSingle?.toString() || '',
+      priceDouble: pack.priceDouble?.toString() || '',
+      regularPriceDouble: pack.regularPriceDouble?.toString() || '',
+      includedFeatures: pack.includedFeatures || [],
       photos: pack.photos || []
     });
     setShowModal(true);
@@ -183,12 +193,16 @@ const PacksManagementPage = () => {
   };
 
   const handleCloseModal = () => {
-    setShowModal(false); setEditingPack(null);
-    setFormData(EMPTY_FORM); setNewFeature('');
+    setShowModal(false);
+    setEditingPack(null);
+    setFormData(EMPTY_FORM);
+    setNewFeature('');
+    setShowFeatureInput(false); // ✅ AJOUTÉ
   };
 
+  // ✅ CORRIGÉ : priceDortoir/priceSingle/priceDouble
   const getFromPrice = (pack) => {
-    const prices = [pack.dortoirPricePerNight, pack.singlePricePerNight, pack.doublePricePerNight].filter(Boolean);
+    const prices = [pack.priceDortoir, pack.priceSingle, pack.priceDouble].filter(Boolean);
     return prices.length > 0 ? Math.min(...prices) : null;
   };
 
@@ -269,7 +283,6 @@ const PacksManagementPage = () => {
               }`}
               style={{ animation: 'slideUp 0.4s ease-out', animationDelay: `${index * 100}ms`, animationFillMode: 'both' }}
             >
-              {/* Inactive banner */}
               {pack.isActive === false && (
                 <div className="bg-gradient-to-r from-red-500 to-red-600 text-white text-center py-2 font-bold text-xs flex items-center justify-center gap-2">
                   <FaTimesCircle /> PACKAGE DEACTIVATED
@@ -289,7 +302,6 @@ const PacksManagementPage = () => {
                     <FaBoxOpen className="text-7xl text-pink-300" />
                   </div>
                 )}
-                {/* From price badge */}
                 {getFromPrice(pack) && (
                   <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-xl text-xs font-bold">
                     from {formatPrice(getFromPrice(pack))}/night
@@ -302,40 +314,47 @@ const PacksManagementPage = () => {
                 <h3 className="text-lg sm:text-xl font-bold text-dark mb-2 line-clamp-1">{pack.name}</h3>
                 <p className="text-dark-light text-xs sm:text-sm mb-4 line-clamp-2 leading-relaxed">{pack.description}</p>
 
-                {/* ✅ 3 Prix par room type */}
+                {/* ✅ CORRIGÉ : priceDortoir/priceSingle/priceDouble + prix barré */}
                 <Card className="p-3 mb-4 bg-gradient-to-br from-pink-50 to-rose-50 border-2 border-pink-200">
                   <p className="text-[10px] font-bold text-pink-700 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                     <FaBed className="flex-shrink-0" /> Price per night
                   </p>
                   <div className="space-y-1.5">
                     {[
-                      { label: 'Dormitory', value: pack.dortoirPricePerNight, color: 'text-green-600' },
-                      { label: 'Single', value: pack.singlePricePerNight, color: 'text-blue-600' },
-                      { label: 'Double', value: pack.doublePricePerNight, color: 'text-purple-600' },
-                    ].map(({ label, value, color }) => value && (
+                      { label: 'Dormitory', promo: pack.priceDortoir,  regular: pack.regularPriceDortoir,  color: 'text-green-600' },
+                      { label: 'Single',    promo: pack.priceSingle,   regular: pack.regularPriceSingle,   color: 'text-blue-600' },
+                      { label: 'Double',    promo: pack.priceDouble,   regular: pack.regularPriceDouble,   color: 'text-purple-600' },
+                    ].map(({ label, promo, regular, color }) => promo && (
                       <div key={label} className="flex justify-between items-center text-xs">
                         <span className="text-dark-light">{label}</span>
-                        <span className={`font-bold ${color}`}>{formatPrice(value)}</span>
+                        <div className="flex items-center gap-2">
+                          {regular && (
+                            <span className="text-dark-light line-through opacity-60 text-[10px]">
+                              {formatPrice(regular)}
+                            </span>
+                          )}
+                          <span className={`font-bold ${color}`}>{formatPrice(promo)}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </Card>
 
-                {/* ✅ Features (strings) */}
-                {pack.features && pack.features.length > 0 && (
+                {/* ✅ CORRIGÉ : includedFeatures */}
+                {pack.includedFeatures && pack.includedFeatures.length > 0 && (
                   <div className="mb-4">
                     <p className="text-[10px] font-bold text-dark mb-2 flex items-center gap-1.5">
                       <FaCheckCircle className="text-green-500" /> What's included
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {pack.features.slice(0, 3).map((f, i) => (
+                      {pack.includedFeatures.slice(0, 3).map((f, i) => (
                         <span key={i} className="text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">
                           ✓ {f}
                         </span>
                       ))}
-                      {pack.features.length > 3 && (
+                      {pack.includedFeatures.length > 3 && (
                         <span className="text-[10px] bg-gray-200 text-dark px-2 py-1 rounded-full font-semibold">
-                          +{pack.features.length - 3} more
+                          +{pack.includedFeatures.length - 3} more
                         </span>
                       )}
                     </div>
@@ -390,14 +409,32 @@ const PacksManagementPage = () => {
           </div>
         }
       >
-        <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
 
-          {/* Photos */}
-          <div>
-            <label className="block text-xs sm:text-sm font-bold text-dark mb-2 flex items-center gap-2">
-              <FaBoxOpen className="text-pink-500" /> Package Photos
-            </label>
-            <ImageUpload images={formData.photos} onChange={handlePhotosChange} maxImages={5} acceptFiles={!editingPack} />
+          {/* ── Section 1 : Informations générales ── */}
+          <div className="border border-gray-200 rounded-2xl p-5 space-y-4">
+            <h3 className="text-sm font-bold text-dark flex items-center gap-2">
+              <span>📦</span> General Information
+            </h3>
+            <div>
+              <label className="block text-xs sm:text-sm font-bold text-dark mb-2">Photos</label>
+              <ImageUpload images={formData.photos} onChange={handlePhotosChange} maxImages={5} acceptFiles={!editingPack} />
+            </div>
+            <Input label="Package Name" name="name" value={formData.name} onChange={handleChange} placeholder="Ride All In" required />
+            <div>
+              <label className="block text-xs sm:text-sm font-bold text-dark mb-2">
+                Description <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                className="input resize-none w-full text-sm"
+                rows="3"
+                placeholder="For those who want a full surf..."
+                required
+              />
+            </div>
           </div>
 
           {/* Upload progress */}
@@ -416,106 +453,73 @@ const PacksManagementPage = () => {
             </Card>
           )}
 
-          {/* Section 1 - Informations générales */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-dark border-b border-gray-200 pb-2">📦 General Information</h3>
-            <Input label="Package Name" name="name" value={formData.name} onChange={handleChange} placeholder="Ride All In" required />
-            <div>
-              <label className="block text-xs sm:text-sm font-bold text-dark mb-2">
-                Description <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                className="input resize-none w-full text-sm"
-                rows="3"
-                placeholder="Describe the package..."
-                required
-              />
-            </div>
-          </div>
-
-          {/* Section 2 - 3 Prix obligatoires */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-bold text-dark border-b border-gray-200 pb-2">
-              🛏️ Price per room type <span className="text-red-500 text-xs font-normal">* all required</span>
+          {/* ── Section 2 : Prix par room type ── ✅ CORRIGÉ noms + wireframe layout */}
+          <div className="border border-gray-200 rounded-2xl p-5 space-y-4">
+            <h3 className="text-sm font-bold text-dark flex items-center gap-2">
+              <span>🛏️</span> Price per room type
+              <span className="text-red-500 text-xs font-normal ml-1">* promo required</span>
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <Input
-                  label="Dormitory (€/night)"
-                  type="number"
-                  step="0.01"
-                  name="dortoirPricePerNight"
-                  value={formData.dortoirPricePerNight}
-                  onChange={handleChange}
-                  placeholder="55"
-                  required
-                />
+
+            {[
+              { label: 'DORTOIR', promo: 'priceDortoir',        regular: 'regularPriceDortoir',  ph: '55',  phR: '70'  },
+              { label: 'SINGLE',  promo: 'priceSingle',         regular: 'regularPriceSingle',   ph: '120', phR: '150' },
+              { label: 'DOUBLE',  promo: 'priceDouble',         regular: 'regularPriceDouble',   ph: '200', phR: '250' },
+            ].map(({ label, promo, regular, ph, phR }) => (
+              <div key={label} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <span className="w-20 text-xs font-bold text-dark tracking-widest flex-shrink-0">{label}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-dark-light whitespace-nowrap">Prix/nuit :</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name={promo}
+                    value={formData[promo]}
+                    onChange={handleChange}
+                    placeholder={ph}
+                    required
+                    className="input w-24 text-sm text-center"
+                  />
+                  <span className="text-sm text-dark-light">€</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-dark-light whitespace-nowrap opacity-60">Barré :</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name={regular}
+                    value={formData[regular]}
+                    onChange={handleChange}
+                    placeholder={phR}
+                    className="input w-24 text-sm text-center opacity-70"
+                  />
+                  <span className="text-sm text-dark-light opacity-60">€</span>
+                </div>
               </div>
-              <div>
-                <Input
-                  label="Single (€/night)"
-                  type="number"
-                  step="0.01"
-                  name="singlePricePerNight"
-                  value={formData.singlePricePerNight}
-                  onChange={handleChange}
-                  placeholder="120"
-                  required
-                />
-              </div>
-              <div>
-                <Input
-                  label="Double (€/night)"
-                  type="number"
-                  step="0.01"
-                  name="doublePricePerNight"
-                  value={formData.doublePricePerNight}
-                  onChange={handleChange}
-                  placeholder="200"
-                  required
-                />
-              </div>
-            </div>
+            ))}
+            <p className="text-[11px] text-dark-light">* Prix promo obligatoires · Prix barré optionnel</p>
           </div>
 
-          {/* Section 3 - Features dynamiques */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-bold text-dark border-b border-gray-200 pb-2">✅ What's included</h3>
+          {/* ── Section 3 : Features ── ✅ CORRIGÉ : includedFeatures partout */}
+          <div className="border border-gray-200 rounded-2xl p-5 space-y-3">
+            <h3 className="text-sm font-bold text-dark flex items-center gap-2">
+              <span>✅</span> What's included
+            </h3>
 
-            {/* Input + Add button */}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newFeature}
-                onChange={e => setNewFeature(e.target.value)}
-                onKeyDown={handleFeatureKeyDown}
-                placeholder="Ex: Daily surf lessons (6 sessions)"
-                className="input flex-1 text-sm"
-              />
-              <Button type="button" onClick={handleAddFeature} className="flex-shrink-0 bg-green-500 hover:bg-green-600 px-4">
-                <FaPlus />
-              </Button>
-            </div>
-            <p className="text-[10px] text-dark-light">Press Enter or click + to add a feature</p>
-
-            {/* Feature list */}
-            {formData.features.length === 0 ? (
-              <p className="text-xs text-dark-light italic text-center py-3 border-2 border-dashed border-gray-200 rounded-xl">
-                No features yet — add at least one
-              </p>
+            {/* Liste features */}
+            {formData.includedFeatures.length === 0 ? (
+              <p className="text-xs text-dark-light italic py-2">No features added yet.</p>
             ) : (
               <ul className="space-y-2">
-                {formData.features.map((feature, i) => (
-                  <li key={i} className="flex items-center gap-2 p-2.5 bg-green-50 border border-green-200 rounded-xl">
-                    <FaCheckCircle className="text-green-500 flex-shrink-0 text-xs" />
-                    <span className="flex-1 text-sm text-dark break-words min-w-0">{feature}</span>
+                {formData.includedFeatures.map((feature, i) => (
+                  <li key={i} className="flex items-center justify-between gap-3 px-3 py-2 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-primary text-xs flex-shrink-0">•</span>
+                      <span className="text-sm text-dark truncate">{feature}</span>
+                    </div>
                     <button
                       type="button"
                       onClick={() => handleRemoveFeature(i)}
-                      className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0 p-1"
+                      className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0 p-1 hover:bg-red-50 rounded-lg"
                     >
                       <FaTimes className="text-xs" />
                     </button>
@@ -523,13 +527,53 @@ const PacksManagementPage = () => {
                 ))}
               </ul>
             )}
+
+            {/* Input nouvelle feature */}
+            {showFeatureInput && (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newFeature}
+                  onChange={e => setNewFeature(e.target.value)}
+                  onKeyDown={handleFeatureKeyDown}
+                  placeholder="Ex: Daily surf lessons (6 sessions)"
+                  className="input flex-1 text-sm"
+                  autoFocus
+                />
+                <Button type="button" onClick={handleAddFeature} className="flex-shrink-0 bg-green-500 hover:bg-green-600 px-3">
+                  <FaCheck className="text-xs" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => { setShowFeatureInput(false); setNewFeature(''); }}
+                  className="flex-shrink-0 px-3"
+                >
+                  <FaTimes className="text-xs" />
+                </Button>
+              </div>
+            )}
+
+            {/* Bouton + Ajouter */}
+            {!showFeatureInput && (
+              <button
+                type="button"
+                onClick={() => setShowFeatureInput(true)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 rounded-xl text-sm text-dark-light hover:border-primary hover:text-primary transition-colors"
+              >
+                <FaPlus className="text-xs" />
+                Add a feature
+              </button>
+            )}
+
             <p className="text-[10px] text-dark-light flex items-center gap-1.5">
-              <FaCheckCircle className="text-green-500" /> {formData.features.length} feature{formData.features.length !== 1 ? 's' : ''} added
+              <FaCheckCircle className="text-green-500" />
+              {formData.includedFeatures.length} feature{formData.includedFeatures.length !== 1 ? 's' : ''} added
             </p>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t-2 border-gray-100">
+          <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" onClick={handleCloseModal} className="flex-1" disabled={uploading}>
               Cancel
             </Button>
@@ -567,7 +611,6 @@ const PacksManagementPage = () => {
             <p className="text-sm text-dark-light">Choose how you want to handle this package</p>
           </div>
 
-          {/* Deactivate */}
           <Card className="p-4 border-2 border-orange-300">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
@@ -584,13 +627,14 @@ const PacksManagementPage = () => {
                   className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-sm"
                   disabled={deleting}
                 >
-                  {deleting ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Processing...</> : <><FaTimesCircle /> Deactivate Package</>}
+                  {deleting
+                    ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Processing...</>
+                    : <><FaTimesCircle /> Deactivate Package</>}
                 </Button>
               </div>
             </div>
           </Card>
 
-          {/* Hard Delete */}
           <Card className="p-4 border-2 border-red-300">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
@@ -609,7 +653,9 @@ const PacksManagementPage = () => {
                   className="w-full bg-gradient-to-r from-red-500 to-red-600 text-sm"
                   disabled={deleting}
                 >
-                  {deleting ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Deleting...</> : <><FaTrash /> Delete Permanently</>}
+                  {deleting
+                    ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Deleting...</>
+                    : <><FaTrash /> Delete Permanently</>}
                 </Button>
               </div>
             </div>
