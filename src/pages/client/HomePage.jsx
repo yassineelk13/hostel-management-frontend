@@ -23,11 +23,13 @@ const HomePage = () => {
       </section>
 
       {/* ✅ Timeline "A Day at Shams House" */}
-      <DayAtShamsHouse />
+      
 
       <section id="chambres">
         <FeaturedRooms />
       </section>
+
+      <DayAtShamsHouse />
 
       <section id="services">
         <ServicesSection />
