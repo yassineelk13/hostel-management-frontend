@@ -102,9 +102,9 @@ const ContactSection = () => {
             const Icon = item.icon;
             const colors = colorClasses[item.color];
             const CardWrapper = item.link ? 'a' : 'div';
-            
+
             return (
-              <Card 
+              <Card
                 key={index}
                 className={`group hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border-2 ${colors.border} ${colors.hover}`}
               >
@@ -116,14 +116,13 @@ const ContactSection = () => {
                   <div className={`inline-flex p-3 sm:p-5 ${colors.bg} rounded-2xl shadow-lg border-2 ${colors.border} mb-3 sm:mb-4 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`}>
                     <Icon className={`text-3xl sm:text-4xl ${colors.icon}`} />
                   </div>
-                  
+
                   <h3 className="font-bold text-dark mb-2 sm:mb-3 text-base sm:text-lg">
                     {item.title}
                   </h3>
-                  
-                  <p className={`text-xs sm:text-sm leading-relaxed whitespace-pre-line ${
-                    item.link ? 'text-primary hover:underline font-medium' : 'text-dark-light'
-                  }`}>
+
+                  <p className={`text-xs sm:text-sm leading-relaxed whitespace-pre-line ${item.link ? 'text-primary hover:underline font-medium' : 'text-dark-light'
+                    }`}>
                     {item.content}
                   </p>
                 </CardWrapper>
@@ -181,12 +180,13 @@ const ContactSection = () => {
           </div>
           <div className="relative h-64 sm:h-80 md:h-96">
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3447.891!2d-9.8176!3d30.8447!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzDCsDUwJzQwLjkiTiA5wrA0OScwMy40Ilc!5e0!3m2!1sen!2sma!4v1234567890"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3425.5515848245514!2d-9.820214324958023!3d30.843228580285114!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xdb25f002e6e23f3%3A0xb8f4bd87fc3f4085!2sShams%20House!5e0!3m2!1sfr!2sma!4v1774626184637!5m2!1sfr!2sma"
               width="100%"
               height="100%"
               style={{ border: 0 }}
-              allowFullScreen=""
+              allowFullScreen
               loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
               title="Shams House Location"
               className="absolute inset-0"
             />
@@ -199,7 +199,7 @@ const ContactSection = () => {
             <p className="text-base sm:text-lg mb-2 opacity-90">
               Ready to book your stay?
             </p>
-            <a 
+            <a
               href={`tel:${settings.phone.replace(/\s/g, '')}`}
               className="text-2xl sm:text-3xl font-bold hover:underline break-all sm:break-normal"
             >
