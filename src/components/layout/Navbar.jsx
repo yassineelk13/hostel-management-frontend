@@ -14,8 +14,8 @@ const Navbar = () => {
   // ✅ Navigation links en anglais
   const navLinks = [
     { name: 'Home', path: '/', anchor: 'hero', type: 'anchor' },
-    { name: 'Packages', path: '/#packs', anchor: 'packs', type: 'anchor' },
-    { name: 'Rooms', path: '/#chambres', anchor: 'chambres', type: 'anchor' },
+    { name: 'Packages', path: '/packs', anchor: 'packs', type: 'anchor' },
+    { name: 'Rooms', path: '/rooms', anchor: 'chambres', type: 'anchor' },
     { name: 'Services', path: '/#services', anchor: 'services', type: 'anchor' },
     { name: 'Contact', path: '/#contact', anchor: 'contact', type: 'anchor' },
   ];
