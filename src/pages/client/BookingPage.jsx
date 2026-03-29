@@ -140,33 +140,42 @@ const BookingPage = () => {
     }));
   };
 
-  const calculateTotal = () => {
+const calculateTotal = () => {
     if (isPack && packData?.totalPrice) return packData.totalPrice;
     if (!selectedRoom) return 0;
 
     const nights = Math.ceil(
-      (new Date(formData.checkOutDate) - new Date(formData.checkInDate)) / (1000 * 60 * 60 * 24)
+        (new Date(formData.checkOutDate) - new Date(formData.checkInDate)) / (1000 * 60 * 60 * 24)
     );
 
-    let roomTotal = 0;
+    // ✅ Nombre de personnes : lits sélectionnés pour DORTOIR, sinon 1
+    const personsCount = selectedRoom.roomType === 'DORTOIR'
+        ? formData.bedIds.length
+        : 1;
 
-    // ✅ SINGLE/DOUBLE → prix chambre entière (pas × nb lits)
+    // ── Prix chambre ──
+    let roomTotal = 0;
     if (selectedRoom.roomType === 'SINGLE' || selectedRoom.roomType === 'DOUBLE') {
-      roomTotal = selectedRoom.pricePerNight * nights;
+        roomTotal = selectedRoom.pricePerNight * nights;
     } else {
-      // ✅ DORMITORY → prix par lit sélectionné
-      roomTotal = selectedRoom.pricePerNight * nights * formData.bedIds.length;
+        // DORTOIR → prix par lit × nuits × nbr lits
+        roomTotal = selectedRoom.pricePerNight * nights * personsCount;
     }
 
+    // ── Prix services × personsCount ──
     const servicesTotal = availableServices
-      .filter(s => formData.serviceIds.includes(s.id))
-      .reduce((sum, s) => {
-        if (s.priceType === 'PER_NIGHT') return sum + s.price * nights;
-        return sum + s.price;
-      }, 0);
+        .filter(s => formData.serviceIds.includes(s.id))
+        .reduce((sum, s) => {
+            if (s.priceType === 'PER_NIGHT') {
+                // ✅ Dinner, Surf... → prix × nuits × personnes
+                return sum + s.price * nights * personsCount;
+            }
+            // ✅ Transport fixe → prix × personnes (1 ticket par personne)
+            return sum + s.price * personsCount;
+        }, 0);
 
     return roomTotal + servicesTotal;
-  };
+};
 
 
   const handleSubmit = async (e) => {
