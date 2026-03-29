@@ -141,42 +141,41 @@ const BookingPage = () => {
   };
 
 const calculateTotal = () => {
-    if (isPack && packData?.totalPrice) return packData.totalPrice;
+    if (isPack) {
+        // ✅ DORTOIR : recalcul selon les lits sélectionnés
+        if (packData?.roomType === 'DORTOIR' && formData.bedIds.length > 0) {
+            return (packData.pricePerNight || 0) * packData.nights * formData.bedIds.length;
+        }
+        // SINGLE / DOUBLE : prix fixe du pack
+        return packData?.totalPrice || 0;
+    }
+
     if (!selectedRoom) return 0;
 
     const nights = Math.ceil(
         (new Date(formData.checkOutDate) - new Date(formData.checkInDate)) / (1000 * 60 * 60 * 24)
     );
 
-    // ✅ Nombre de personnes : lits sélectionnés pour DORTOIR, sinon 1
     const personsCount = selectedRoom.roomType === 'DORTOIR'
         ? formData.bedIds.length
         : 1;
 
-    // ── Prix chambre ──
     let roomTotal = 0;
     if (selectedRoom.roomType === 'SINGLE' || selectedRoom.roomType === 'DOUBLE') {
         roomTotal = selectedRoom.pricePerNight * nights;
     } else {
-        // DORTOIR → prix par lit × nuits × nbr lits
         roomTotal = selectedRoom.pricePerNight * nights * personsCount;
     }
 
-    // ── Prix services × personsCount ──
     const servicesTotal = availableServices
         .filter(s => formData.serviceIds.includes(s.id))
         .reduce((sum, s) => {
-            if (s.priceType === 'PER_NIGHT') {
-                // ✅ Dinner, Surf... → prix × nuits × personnes
-                return sum + s.price * nights * personsCount;
-            }
-            // ✅ Transport fixe → prix × personnes (1 ticket par personne)
+            if (s.priceType === 'PER_NIGHT') return sum + s.price * nights * personsCount;
             return sum + s.price * personsCount;
         }, 0);
 
     return roomTotal + servicesTotal;
 };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -273,7 +272,18 @@ const calculateTotal = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <FaStar className="text-primary flex-shrink-0" />
-                      <span className="font-bold text-primary whitespace-nowrap">{formatPrice(packData.totalPrice)}</span>
+                      <span className="font-bold text-primary whitespace-nowrap">
+    {formatPrice(
+        packData?.roomType === 'DORTOIR' && formData.bedIds.length > 0
+            ? (packData.pricePerNight || 0) * packData.nights * formData.bedIds.length
+            : packData.totalPrice
+    )}
+    {packData?.roomType === 'DORTOIR' && formData.bedIds.length > 1 && (
+        <span className="text-xs font-normal text-primary/60 ml-1">
+            ({formData.bedIds.length} beds)
+        </span>
+    )}
+</span>
                     </div>
                   </div>
                 </div>

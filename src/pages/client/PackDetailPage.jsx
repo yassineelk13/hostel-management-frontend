@@ -16,15 +16,15 @@ const NIGHTS_OPTIONS = Array.from({ length: 8 }, (_, i) => i + 3);
 
 const ROOM_TYPES = [
   { key: 'DORTOIR', label: 'Dormitory', priceField: 'priceDortoir', regularField: 'regularPriceDortoir' },
-  { key: 'SINGLE',  label: 'Single',    priceField: 'priceSingle',  regularField: 'regularPriceSingle'  },
-  { key: 'DOUBLE',  label: 'Double',    priceField: 'priceDouble',  regularField: 'regularPriceDouble'  },
+  { key: 'SINGLE', label: 'Single', priceField: 'priceSingle', regularField: 'regularPriceSingle' },
+  { key: 'DOUBLE', label: 'Double', priceField: 'priceDouble', regularField: 'regularPriceDouble' },
 ];
 
 // ✅ Icône auto selon le nom du service
 const getServiceIcon = (name = '') => {
   const n = name.toLowerCase();
   if (n.includes('dinner') || n.includes('meal') || n.includes('food') || n.includes('breakfast')) return FaUtensils;
-  if (n.includes('surf'))    return FaSwimmer;
+  if (n.includes('surf')) return FaSwimmer;
   if (n.includes('transport') || n.includes('airport') || n.includes('transfer')) return FaCar;
   if (n.includes('photo') || n.includes('video') || n.includes('camera')) return FaCamera;
   if (n.includes('wifi') || n.includes('internet')) return FaWifi;
@@ -84,16 +84,16 @@ const PackDetailPage = () => {
 
   const checkOutDate = checkInDate && selectedNights
     ? (() => {
-        const d = new Date(checkInDate);
-        d.setDate(d.getDate() + parseInt(selectedNights));
-        return d.toISOString().split('T')[0];
-      })()
+      const d = new Date(checkInDate);
+      d.setDate(d.getDate() + parseInt(selectedNights));
+      return d.toISOString().split('T')[0];
+    })()
     : null;
 
   const handleBooking = () => {
     if (!selectedRoomType) { alert('Please select a room type'); return; }
-    if (!selectedNights)   { alert('Please select number of nights'); return; }
-    if (!checkInDate)      { alert('Please select an arrival date'); return; }
+    if (!selectedNights) { alert('Please select number of nights'); return; }
+    if (!checkInDate) { alert('Please select an arrival date'); return; }
 
     navigate('/booking', {
       state: {
@@ -366,16 +366,14 @@ const PackDetailPage = () => {
                       {ROOM_TYPES.map(({ key, label, priceField, regularField }) => pack[priceField] && (
                         <label
                           key={key}
-                          className={`flex items-center justify-between p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                            selectedRoomType === key
+                          className={`flex items-center justify-between p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${selectedRoomType === key
                               ? 'border-primary bg-primary/5'
                               : 'border-gray-100 hover:border-gray-200 bg-gray-50'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                              selectedRoomType === key ? 'border-primary' : 'border-gray-300'
-                            }`}>
+                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selectedRoomType === key ? 'border-primary' : 'border-gray-300'
+                              }`}>
                               {selectedRoomType === key && (
                                 <div className="w-2 h-2 rounded-full bg-primary" />
                               )}
@@ -442,12 +440,23 @@ const PackDetailPage = () => {
                           <p className="text-xs text-dark/50 mb-0.5">
                             {ROOM_TYPES.find(r => r.key === selectedRoomType)?.label} · {selectedNights} nights
                           </p>
-                          <p className="text-xs text-dark/40">Estimated total</p>
+                          <p className="text-xs text-dark/40">
+                            {/* ✅ Note DORTOIR */}
+                            {selectedRoomType === 'DORTOIR'
+                              ? 'Price per bed — multiply by number of beds'
+                              : 'Estimated total'}
+                          </p>
                         </div>
                         <span className="text-2xl font-display font-bold text-primary">
                           {formatPrice(totalPrice)}
                         </span>
                       </div>
+                      {/* ✅ Badge avertissement DORTOIR */}
+                      {selectedRoomType === 'DORTOIR' && (
+                        <p className="text-[11px] text-primary/60 mt-2 pt-2 border-t border-primary/10">
+                          ⚡ Final price will be calculated based on beds selected at next step
+                        </p>
+                      )}
                     </div>
                   )}
 
