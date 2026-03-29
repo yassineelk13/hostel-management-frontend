@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaCheck, FaArrowLeft, FaBed, FaChevronLeft, FaChevronRight, FaMoon } from 'react-icons/fa';
+import {
+  FaCheck, FaArrowLeft, FaBed, FaChevronLeft, FaChevronRight,
+  FaMoon, FaConciergeBell, FaUtensils, FaWifi, FaCar,
+  FaSwimmer, FaCamera, FaHeart, FaStar
+} from 'react-icons/fa';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Loader from '../../components/common/Loader';
@@ -8,7 +12,6 @@ import { packsAPI } from '../../services/api';
 import { formatPrice } from '../../utils/priceFormatter';
 import { bypassCloudinaryCache } from '../../utils/imageHelper';
 
-// Dropdown 3 → 10 nuits
 const NIGHTS_OPTIONS = Array.from({ length: 8 }, (_, i) => i + 3);
 
 const ROOM_TYPES = [
@@ -17,6 +20,18 @@ const ROOM_TYPES = [
   { key: 'DOUBLE',  label: 'Double',    priceField: 'priceDouble',  regularField: 'regularPriceDouble'  },
 ];
 
+// ✅ Icône auto selon le nom du service
+const getServiceIcon = (name = '') => {
+  const n = name.toLowerCase();
+  if (n.includes('dinner') || n.includes('meal') || n.includes('food') || n.includes('breakfast')) return FaUtensils;
+  if (n.includes('surf'))    return FaSwimmer;
+  if (n.includes('transport') || n.includes('airport') || n.includes('transfer')) return FaCar;
+  if (n.includes('photo') || n.includes('video') || n.includes('camera')) return FaCamera;
+  if (n.includes('wifi') || n.includes('internet')) return FaWifi;
+  if (n.includes('yoga') || n.includes('wellness')) return FaHeart;
+  return FaConciergeBell;
+};
+
 const PackDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -24,8 +39,6 @@ const PackDetailPage = () => {
   const [pack, setPack] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-  // ✅ Booking state
   const [selectedRoomType, setSelectedRoomType] = useState(null);
   const [selectedNights, setSelectedNights] = useState('');
   const [checkInDate, setCheckInDate] = useState('');
@@ -38,14 +51,12 @@ const PackDetailPage = () => {
       setPack(response.data.data);
     } catch (error) {
       console.error('Error:', error);
-      alert('Error loading package');
       navigate('/packs');
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Image navigation ──
   const nextImage = () => {
     if (!pack?.photos) return;
     setCurrentImageIndex(prev => prev === pack.photos.length - 1 ? 0 : prev + 1);
@@ -55,7 +66,6 @@ const PackDetailPage = () => {
     setCurrentImageIndex(prev => prev === 0 ? pack.photos.length - 1 : prev - 1);
   };
 
-  // ── Calculs ──
   const getPromoPrice = () => {
     if (!selectedRoomType || !pack) return null;
     const rt = ROOM_TYPES.find(r => r.key === selectedRoomType);
@@ -72,7 +82,6 @@ const PackDetailPage = () => {
     ? (getPromoPrice() || 0) * parseInt(selectedNights)
     : null;
 
-  // ── Check-out auto-calculé ──
   const checkOutDate = checkInDate && selectedNights
     ? (() => {
         const d = new Date(checkInDate);
@@ -81,7 +90,6 @@ const PackDetailPage = () => {
       })()
     : null;
 
-  // ── Booking ──
   const handleBooking = () => {
     if (!selectedRoomType) { alert('Please select a room type'); return; }
     if (!selectedNights)   { alert('Please select number of nights'); return; }
@@ -96,278 +104,388 @@ const PackDetailPage = () => {
         checkOut: checkOutDate,
         nights: parseInt(selectedNights),
         pricePerNight: getPromoPrice(),
-        totalPrice: totalPrice,
+        totalPrice,
         isPack: true
       }
     });
   };
 
   if (loading) return <Loader />;
+  if (!pack) return null;
 
-  if (!pack) {
-    return (
-      <div className="min-h-screen bg-[#f5f0eb] flex items-center justify-center px-4">
-        <Card className="p-10 text-center">
-          <p className="text-dark-light mb-4">Package not found</p>
-          <Button onClick={() => navigate('/packs')}>Back to Packages</Button>
-        </Card>
-      </div>
-    );
-  }
+  // ✅ Services inclus dans le pack
+  const includedServices = pack.services || [];
 
   return (
     <div className="min-h-screen bg-[#f5f0eb]">
 
-      {/* ── Header ── */}
-      <div className="pt-24 pb-10 px-4 sm:px-8 max-w-6xl mx-auto">
-        <button
-          onClick={() => navigate('/packs')}
-          className="flex items-center gap-2 text-dark-light hover:text-dark transition-colors text-sm mb-6"
-        >
-          <FaArrowLeft className="text-xs" />
-          Back to Packages
-        </button>
-        <h1 className="text-4xl sm:text-5xl font-display font-bold text-dark">{pack.name}</h1>
+      {/* ── Top nav ── */}
+      <div className="fixed top-0 left-0 right-0 z-40 bg-[#f5f0eb]/90 backdrop-blur-sm border-b border-dark/5">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between">
+          <button
+            onClick={() => navigate('/packs')}
+            className="flex items-center gap-2 text-sm text-dark/60 hover:text-dark transition-colors"
+          >
+            <FaArrowLeft className="text-xs" />
+            All Packages
+          </button>
+          <span className="text-sm font-bold text-dark hidden sm:block">{pack.name}</span>
+          <button
+            onClick={handleBooking}
+            disabled={!selectedRoomType || !selectedNights || !checkInDate}
+            className="hidden sm:flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-full text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Book Now
+          </button>
+        </div>
       </div>
 
-      {/* ── Body ── */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-8 pb-20">
-        <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
+      <div className="pt-16">
 
-          {/* ── LEFT : Pack info ── */}
-          <div className="lg:col-span-2 space-y-8">
-
-            {/* Galerie photos */}
-            {pack.photos && pack.photos.length > 0 && (
-              <div className="relative aspect-[16/9] rounded-sm overflow-hidden bg-accent/20 group">
-                <img
-                  src={bypassCloudinaryCache(pack.photos[currentImageIndex])}
-                  alt={pack.name}
-                  className="w-full h-full object-cover transition-opacity duration-500"
-                />
-                {pack.photos.length > 1 && (
-                  <>
-                    <button
-                      onClick={prevImage}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <FaChevronLeft />
-                    </button>
-                    <button
-                      onClick={nextImage}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <FaChevronRight />
-                    </button>
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                      {pack.photos.map((_, i) => (
-                        <button
-                          key={i}
-                          onClick={() => setCurrentImageIndex(i)}
-                          className={`h-2 rounded-full transition-all ${
-                            i === currentImageIndex ? 'bg-white w-6' : 'bg-white/50 w-2'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <div className="absolute top-3 right-3 bg-black/50 text-white px-2.5 py-1 rounded-full text-xs">
-                      {currentImageIndex + 1} / {pack.photos.length}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Description */}
-            <div>
-              <h2 className="text-xl font-bold text-dark mb-3">About this Package</h2>
-              <p className="text-dark-light leading-relaxed text-sm sm:text-base">{pack.description}</p>
+        {/* ── Hero image ── */}
+        <div className="relative w-full h-[55vh] md:h-[65vh] overflow-hidden bg-dark/10 group">
+          {pack.photos && pack.photos.length > 0 ? (
+            <img
+              src={bypassCloudinaryCache(pack.photos[currentImageIndex])}
+              alt={pack.name}
+              className="w-full h-full object-cover transition-all duration-700"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+              <span className="text-9xl opacity-20">🏄</span>
             </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
-            {/* ✅ Features (strings) */}
-            {pack.includedFeatures && pack.includedFeatures.length > 0 && (
-              <div>
-                <h3 className="text-xs font-bold tracking-widest text-dark/50 uppercase mb-4">
-                  What's included?
-                </h3>
-                <ul className="space-y-3">
-                  {pack.includedFeatures.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm text-dark-light">
-                      <FaCheck className="text-primary mt-0.5 flex-shrink-0 text-xs" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* ✅ Prix par room type (informatif) */}
-            <div>
-              <h3 className="text-xs font-bold tracking-widest text-dark/50 uppercase mb-4">
-                Prices per night
-              </h3>
-              <div className="space-y-2">
-                {ROOM_TYPES.map(({ key, label, priceField, regularField }) => pack[priceField] && (
-                  <div key={key} className="flex items-center justify-between py-2 border-b border-dark/10 last:border-0">
-                    <div className="flex items-center gap-2">
-                      <FaBed className="text-primary/50 text-xs" />
-                      <span className="text-sm text-dark">{label}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {pack[regularField] && (
-                        <span className="text-xs text-dark-light line-through opacity-60">
-                          {formatPrice(pack[regularField])}/night
-                        </span>
-                      )}
-                      <span className="text-sm font-bold text-primary">
-                        {formatPrice(pack[priceField])}/night
-                      </span>
-                    </div>
-                  </div>
+          {pack.photos && pack.photos.length > 1 && (
+            <>
+              <button onClick={prevImage} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm hover:bg-white/40 text-white p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all">
+                <FaChevronLeft />
+              </button>
+              <button onClick={nextImage} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm hover:bg-white/40 text-white p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all">
+                <FaChevronRight />
+              </button>
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+                {pack.photos.map((_, i) => (
+                  <button key={i} onClick={() => setCurrentImageIndex(i)}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${i === currentImageIndex ? 'bg-white w-8' : 'bg-white/50 w-2'}`}
+                  />
                 ))}
               </div>
+              <div className="absolute top-4 right-4 bg-black/30 backdrop-blur-sm text-white/80 text-xs px-3 py-1.5 rounded-full">
+                {currentImageIndex + 1} / {pack.photos.length}
+              </div>
+            </>
+          )}
+
+          {/* Pack name on image */}
+          <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12">
+            <div className="max-w-5xl mx-auto">
+              <h1 className="text-4xl md:text-6xl font-display font-bold text-white leading-tight drop-shadow-lg">
+                {pack.name}
+              </h1>
             </div>
-
           </div>
+        </div>
 
-          {/* ── RIGHT : Booking form ── */}
-          <div className="lg:col-span-1">
-            <Card className="p-5 sm:p-6 lg:sticky lg:top-24 border border-dark/10 shadow-xl bg-white">
+        {/* ── Main content ── */}
+        <div className="max-w-5xl mx-auto px-4 sm:px-8 py-12 md:py-16">
+          <div className="grid lg:grid-cols-3 gap-12 lg:gap-16">
 
-              <h3 className="text-base font-bold text-dark mb-5 pb-3 border-b border-dark/10">
-                Book this Package
-              </h3>
+            {/* ── LEFT ── */}
+            <div className="lg:col-span-2 space-y-12">
 
-              {/* Section 1 : Room type */}
-              <div className="mb-5">
-                <p className="text-xs font-bold tracking-widest text-dark/50 uppercase mb-3 flex items-center gap-2">
-                  <FaBed className="text-primary" /> Room type
-                </p>
-                <div className="space-y-2">
-                  {ROOM_TYPES.map(({ key, label, priceField, regularField }) => pack[priceField] && (
-                    <label
-                      key={key}
-                      className={`flex items-center justify-between p-3 rounded-xl border-2 cursor-pointer transition-all ${
-                        selectedRoomType === key
-                          ? 'border-primary bg-primary/5'
-                          : 'border-gray-200 hover:border-primary/40'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="radio"
-                          name="roomType"
-                          value={key}
-                          checked={selectedRoomType === key}
-                          onChange={() => setSelectedRoomType(key)}
-                          className="accent-primary"
-                        />
-                        <span className="text-sm font-medium text-dark">{label}</span>
-                      </div>
-                      <div className="text-right">
-                        {pack[regularField] && (
-                          <div className="text-[10px] text-dark-light line-through opacity-60">
-                            {formatPrice(pack[regularField])}/night
-                          </div>
-                        )}
-                        <div className="text-sm font-bold text-primary">
-                          {formatPrice(pack[priceField])}/night
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
+              {/* Description */}
+              <p className="text-dark-light text-base md:text-lg leading-relaxed">
+                {pack.description}
+              </p>
 
-              {/* Section 2 : Nombre de nuits */}
-              <div className="mb-5">
-                <p className="text-xs font-bold tracking-widest text-dark/50 uppercase mb-3 flex items-center gap-2">
-                  <FaMoon className="text-primary" /> Number of nights
-                </p>
-                <select
-                  value={selectedNights}
-                  onChange={e => setSelectedNights(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none text-sm text-dark bg-white"
-                >
-                  <option value="">Select...</option>
-                  {NIGHTS_OPTIONS.map(n => (
-                    <option key={n} value={n}>{n} night{n > 1 ? 's' : ''}</option>
-                  ))}
-                </select>
-              </div>
+              <div className="w-full h-px bg-dark/10" />
 
-              {/* Section 3 : Dates */}
-              <div className="mb-5 space-y-3">
+              {/* What's included — features */}
+              {pack.includedFeatures && pack.includedFeatures.length > 0 && (
                 <div>
-                  <label className="block text-xs font-bold tracking-widest text-dark/50 uppercase mb-2">
-                    📅 Arrival date
-                  </label>
-                  <input
-                    type="date"
-                    value={checkInDate}
-                    onChange={e => setCheckInDate(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none text-sm"
-                  />
-                </div>
-
-                {checkOutDate && (
-                  <div>
-                    <label className="block text-xs font-bold tracking-widest text-dark/50 uppercase mb-2">
-                      📅 Departure (auto)
-                    </label>
-                    <div className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl bg-gray-50 text-sm text-dark-light">
-                      {new Date(checkOutDate).toLocaleDateString('en-US', {
-                        day: 'numeric', month: 'long', year: 'numeric'
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Section 4 : Total estimé */}
-              {totalPrice !== null && (
-                <div className="mb-5 p-4 bg-primary/5 border-2 border-primary/20 rounded-xl">
-                  <p className="text-xs font-bold tracking-widest text-dark/50 uppercase mb-2">
-                    💰 Estimated total
+                  <p className="text-xs font-bold tracking-[0.25em] text-dark/50 uppercase mb-6">
+                    What's included?
                   </p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-dark-light">
-                      {ROOM_TYPES.find(r => r.key === selectedRoomType)?.label} × {selectedNights} nights
-                    </span>
-                    <span className="text-2xl font-bold text-primary">
-                      {formatPrice(totalPrice)}
-                    </span>
-                  </div>
+                  <ul className="space-y-3">
+                    {pack.includedFeatures.map((feature, i) => (
+                      <li key={i} className="flex items-start gap-4 text-sm md:text-base text-dark-light">
+                        <span className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <FaCheck className="text-primary text-[8px]" />
+                        </span>
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
 
-              {/* Button */}
-              <Button
-                onClick={handleBooking}
-                className="w-full shadow-lg hover:shadow-xl"
-                disabled={!selectedRoomType || !selectedNights || !checkInDate}
-              >
-                Confirm Reservation
-              </Button>
+              {/* ✅ ── INCLUDED SERVICES ── */}
+              {includedServices.length > 0 && (
+                <>
+                  <div className="w-full h-px bg-dark/10" />
 
-              {/* Trust signals */}
-              <div className="mt-4 space-y-1.5 text-xs text-dark-light text-center">
-                <p className="flex items-center justify-center gap-2">
-                  <FaCheck className="text-green-500 flex-shrink-0" />
-                  Instant confirmation by email
+                  <div>
+                    {/* Section header */}
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <FaStar className="text-primary text-xs" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold tracking-[0.25em] text-dark/50 uppercase">
+                          Included Services
+                        </p>
+                        <p className="text-xs text-dark/40 mt-0.5">
+                          Everything below is already included in your package price
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Services grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {includedServices.map((service, i) => {
+                        const Icon = getServiceIcon(service.name);
+                        return (
+                          <div
+                            key={service.id || i}
+                            className="group flex items-center gap-4 p-4 bg-white rounded-2xl border border-dark/5 hover:border-primary/20 hover:shadow-md transition-all duration-300"
+                            style={{
+                              animation: 'fadeUp 0.4s ease-out both',
+                              animationDelay: `${i * 60}ms`
+                            }}
+                          >
+                            {/* Icon */}
+                            <div className="w-10 h-10 rounded-xl bg-primary/8 group-hover:bg-primary/15 flex items-center justify-center flex-shrink-0 transition-colors duration-300">
+                              <Icon className="text-primary text-sm" />
+                            </div>
+
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-dark truncate">{service.name}</p>
+                              <p className="text-[11px] text-dark/40 mt-0.5">
+                                {service.priceType === 'PER_NIGHT' ? 'Per night' : 'Fixed — included'}
+                              </p>
+                            </div>
+
+                            {/* Price */}
+                            <div className="text-right flex-shrink-0">
+                              <p className="text-sm font-bold text-primary">{formatPrice(service.price)}</p>
+                              {service.priceType === 'PER_NIGHT' && (
+                                <p className="text-[10px] text-dark/30">/night</p>
+                              )}
+                            </div>
+
+                            {/* Included badge */}
+                            <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                              <FaCheck className="text-green-500 text-[8px]" />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Total services value */}
+                    {(() => {
+                      const totalServicesValue = includedServices.reduce((sum, s) => sum + (s.price || 0), 0);
+                      return totalServicesValue > 0 ? (
+                        <div className="mt-4 flex items-center justify-between px-4 py-3 bg-green-50 border border-green-100 rounded-xl">
+                          <div className="flex items-center gap-2">
+                            <FaCheck className="text-green-500 text-xs flex-shrink-0" />
+                            <span className="text-xs text-green-700 font-medium">
+                              Total services value included
+                            </span>
+                          </div>
+                          <span className="text-sm font-bold text-green-700">
+                            {formatPrice(totalServicesValue)}
+                            {includedServices.some(s => s.priceType === 'PER_NIGHT') && (
+                              <span className="text-xs font-normal text-green-600"> +/night</span>
+                            )}
+                          </span>
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+                </>
+              )}
+
+              <div className="w-full h-px bg-dark/10" />
+
+              {/* Prices per room type */}
+              <div>
+                <p className="text-xs font-bold tracking-[0.25em] text-dark/50 uppercase mb-6">
+                  Prices per night
                 </p>
-                <p className="flex items-center justify-center gap-2">
-                  <FaCheck className="text-green-500 flex-shrink-0" />
-                  Payment on arrival
-                </p>
+                <div className="space-y-0">
+                  {ROOM_TYPES.map(({ key, label, priceField, regularField }) => pack[priceField] && (
+                    <div key={key} className="flex items-center justify-between py-4 border-b border-dark/10 last:border-0">
+                      <div className="flex items-center gap-3">
+                        <FaBed className="text-primary/40 text-sm" />
+                        <span className="text-sm md:text-base text-dark">{label}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {pack[regularField] && pack[regularField] > pack[priceField] && (
+                          <span className="text-xs text-dark/40 line-through">{formatPrice(pack[regularField])}</span>
+                        )}
+                        <span className="text-base font-bold text-primary">
+                          {formatPrice(pack[priceField])}
+                          <span className="text-xs font-normal text-dark/40">/night</span>
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-            </Card>
-          </div>
+            </div>
 
+            {/* ── RIGHT : Booking card ── */}
+            <div className="lg:col-span-1">
+              <div className="lg:sticky lg:top-24 bg-white rounded-2xl shadow-2xl overflow-hidden">
+
+                {/* Card header */}
+                <div className="bg-dark px-6 py-5">
+                  <p className="text-white/60 text-xs uppercase tracking-widest mb-1">Starting from</p>
+                  {(() => {
+                    const prices = [pack.priceDortoir, pack.priceSingle, pack.priceDouble].filter(Boolean);
+                    const min = prices.length > 0 ? Math.min(...prices) : null;
+                    return min ? (
+                      <p className="text-white text-2xl font-display font-bold">
+                        {formatPrice(min)}<span className="text-sm font-normal text-white/60"> / night</span>
+                      </p>
+                    ) : null;
+                  })()}
+                </div>
+
+                <div className="p-6 space-y-5">
+
+                  {/* Room type */}
+                  <div>
+                    <p className="text-xs font-bold tracking-widest text-dark/40 uppercase mb-3">Room type</p>
+                    <div className="space-y-2">
+                      {ROOM_TYPES.map(({ key, label, priceField, regularField }) => pack[priceField] && (
+                        <label
+                          key={key}
+                          className={`flex items-center justify-between p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                            selectedRoomType === key
+                              ? 'border-primary bg-primary/5'
+                              : 'border-gray-100 hover:border-gray-200 bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                              selectedRoomType === key ? 'border-primary' : 'border-gray-300'
+                            }`}>
+                              {selectedRoomType === key && (
+                                <div className="w-2 h-2 rounded-full bg-primary" />
+                              )}
+                            </div>
+                            <span className="text-sm font-medium text-dark">{label}</span>
+                          </div>
+                          <div className="text-right">
+                            {pack[regularField] && pack[regularField] > pack[priceField] && (
+                              <div className="text-[10px] text-dark/30 line-through">{formatPrice(pack[regularField])}</div>
+                            )}
+                            <div className="text-sm font-bold text-primary">{formatPrice(pack[priceField])}</div>
+                          </div>
+                          <input type="radio" className="sr-only" name="roomType" value={key}
+                            checked={selectedRoomType === key} onChange={() => setSelectedRoomType(key)} />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Nights */}
+                  <div>
+                    <p className="text-xs font-bold tracking-widest text-dark/40 uppercase mb-3">Number of nights</p>
+                    <select
+                      value={selectedNights}
+                      onChange={e => setSelectedNights(e.target.value)}
+                      className="w-full px-4 py-3.5 border-2 border-gray-100 bg-gray-50 rounded-xl focus:border-primary focus:bg-white focus:outline-none text-sm text-dark transition-colors"
+                    >
+                      <option value="">Choose duration...</option>
+                      {NIGHTS_OPTIONS.map(n => (
+                        <option key={n} value={n}>{n} nights</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Arrival date */}
+                  <div>
+                    <p className="text-xs font-bold tracking-widest text-dark/40 uppercase mb-3">Arrival date</p>
+                    <input
+                      type="date"
+                      value={checkInDate}
+                      onChange={e => setCheckInDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full px-4 py-3.5 border-2 border-gray-100 bg-gray-50 rounded-xl focus:border-primary focus:bg-white focus:outline-none text-sm transition-colors"
+                    />
+                  </div>
+
+                  {/* Departure auto */}
+                  {checkOutDate && (
+                    <div className="flex items-center justify-between text-sm py-2 px-1">
+                      <span className="text-dark/50">Departure</span>
+                      <span className="font-medium text-dark">
+                        {new Date(checkOutDate).toLocaleDateString('en-US', {
+                          day: 'numeric', month: 'long', year: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Total */}
+                  {totalPrice !== null && (
+                    <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-dark/50 mb-0.5">
+                            {ROOM_TYPES.find(r => r.key === selectedRoomType)?.label} · {selectedNights} nights
+                          </p>
+                          <p className="text-xs text-dark/40">Estimated total</p>
+                        </div>
+                        <span className="text-2xl font-display font-bold text-primary">
+                          {formatPrice(totalPrice)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CTA */}
+                  <button
+                    onClick={handleBooking}
+                    disabled={!selectedRoomType || !selectedNights || !checkInDate}
+                    className="w-full bg-primary text-white py-4 rounded-xl text-sm font-bold hover:bg-primary-dark transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+                  >
+                    Confirm Reservation
+                  </button>
+
+                  {/* Trust */}
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center gap-2.5 text-xs text-dark/40">
+                      <FaCheck className="text-green-500 flex-shrink-0" />
+                      <span>Instant confirmation by email</span>
+                    </div>
+                    <div className="flex items-center gap-2.5 text-xs text-dark/40">
+                      <FaCheck className="text-green-500 flex-shrink-0" />
+                      <span>Payment on arrival — no card required</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 };
