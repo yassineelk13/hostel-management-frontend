@@ -177,32 +177,34 @@ const calculateTotal = () => {
     return roomTotal + servicesTotal;
 };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (formData.bedIds.length === 0) {
-      alert('Please select at least one bed');
-      return;
+        alert('Please select at least one bed');
+        return;
     }
 
     setLoading(true);
     try {
-      // ✅ Payload propre
-      const payload = {
-        ...formData,
-        serviceIds: isPack ? [] : formData.serviceIds, // ✅ Backend gère les services du pack
-        packId: isPack ? packData.packId : null,
-      };
-      const response = await bookingsAPI.create(payload);  // ✅ payload au lieu de formData
-      setBookingConfirmation(response.data.data);
-      setStep(4);
+        const payload = {
+            ...formData,
+            serviceIds: isPack ? [] : formData.serviceIds,
+            packId: isPack ? packData.packId : null,
+            // ✅ Envoyer le total recalculé
+            totalPrice: calculateTotal(),
+        };
+
+        const response = await bookingsAPI.create(payload);
+        setBookingConfirmation(response.data.data);
+        setStep(4);
     } catch (error) {
-      console.error('Error:', error);
-      alert(error.response?.data?.message || 'Error creating booking');
+        console.error('Error:', error);
+        alert(error.response?.data?.message || 'Error creating booking');
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
 
   const steps = [
