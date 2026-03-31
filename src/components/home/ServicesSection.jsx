@@ -120,7 +120,7 @@ const ServicesSection = () => {
         </div>
 
         {/* ✅ CTA Section - Responsive + Anglais */}
-        <div className="mt-12 md:mt-16 text-center">
+        {/* <div className="mt-12 md:mt-16 text-center">
           <Card className="inline-block p-5 sm:p-8 bg-gradient-to-r from-primary/5 to-accent/5 border-2 border-primary/20 mx-4">
             <p className="text-dark-light mb-2 text-sm sm:text-base">
               Want to know more about our services?
@@ -132,7 +132,7 @@ const ServicesSection = () => {
               </a>
             </p>
           </Card>
-        </div>
+        </div> */}
       </div>
     </section>
   );
