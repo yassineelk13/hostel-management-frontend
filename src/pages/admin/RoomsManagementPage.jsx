@@ -67,77 +67,70 @@ const RoomsManagementPage = () => {
   };
 
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setUploading(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setUploading(true);
 
-    try {
-      let photoUrls = [];
+  try {
+    // ✅ Sépare les URLs Cloudinary existantes des nouveaux fichiers
+    const existingUrls = formData.photos.filter(
+      p => typeof p === 'string' && p.startsWith('http')
+    );
+    const newFiles = formData.photos.filter(p => p instanceof File);
 
+    // ✅ Upload les nouveaux fichiers (création ET édition)
+    const uploadedUrls = [];
+    if (newFiles.length > 0) {
+      setUploadProgress({ current: 0, total: newFiles.length });
 
-      // Upload photos
-      if (!editingRoom && formData.photos.length > 0 && formData.photos[0] instanceof File) {
-        setUploadProgress({ current: 0, total: formData.photos.length });
+      for (let i = 0; i < newFiles.length; i++) {
+        const file = newFiles[i];
+        const photoFormData = new FormData();
+        photoFormData.append('photo', file);
 
-        for (let i = 0; i < formData.photos.length; i++) {
-          const file = formData.photos[i];
-          const photoFormData = new FormData();
-          photoFormData.append('photo', file);
-
-          try {
-            const response = await roomsAPI.uploadPhoto(photoFormData);
-
-            if (response.data.success) {
-              photoUrls.push(response.data.data);
-              setUploadProgress({ current: i + 1, total: formData.photos.length });
-            } else {
-              throw new Error(response.data.message || 'Upload error');
-            }
-          } catch (error) {
-            console.error(`Error uploading photo ${i + 1}:`, error);
-            toast.warning(`⚠️ Error photo ${i + 1}. Continuing...`);
+        try {
+          const response = await roomsAPI.uploadPhoto(photoFormData);
+          if (response.data.success) {
+            uploadedUrls.push(response.data.data); // ✅ URL Cloudinary
+            setUploadProgress({ current: i + 1, total: newFiles.length });
           }
+        } catch (error) {
+          console.error(`Erreur upload photo ${i + 1}:`, error);
+          toast.warning(`⚠️ Erreur photo ${i + 1}. Continuation...`);
         }
-
-        if (photoUrls.length === 0) {
-          toast.error('❌ No photos uploaded');
-          setUploading(false);
-          return;
-        }
-      } else {
-        photoUrls = formData.photos;
       }
-
-
-      const roomData = {
-        roomNumber: formData.roomNumber,
-        roomType: formData.roomType,
-        description: formData.description,
-        pricePerNight: parseFloat(formData.pricePerNight),
-        numberOfBeds: parseInt(formData.numberOfBeds),
-        photos: photoUrls
-      };
-
-
-      if (editingRoom) {
-        await roomsAPI.update(editingRoom.id, roomData);
-        toast.success('✅ Room updated successfully!');
-      } else {
-        await roomsAPI.createWithUrls(roomData);
-        toast.success('✅ Room created successfully!');
-      }
-
-
-      handleCloseModal();
-      fetchRooms();
-
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error(`❌ ${error.response?.data?.message || 'Error saving room'}`);
-    } finally {
-      setUploading(false);
     }
-  };
+
+    // ✅ URLs finales = existantes Cloudinary + nouvellement uploadées
+    const finalPhotoUrls = [...existingUrls, ...uploadedUrls];
+
+    const roomData = {
+      roomNumber: formData.roomNumber,
+      roomType: formData.roomType,
+      description: formData.description,
+      pricePerNight: parseFloat(formData.pricePerNight),
+      numberOfBeds: parseInt(formData.numberOfBeds),
+      photos: finalPhotoUrls // ✅ 100% URLs Cloudinary
+    };
+
+    if (editingRoom) {
+      await roomsAPI.update(editingRoom.id, roomData);
+      toast.success('✅ Room updated successfully!');
+    } else {
+      await roomsAPI.createWithUrls(roomData);
+      toast.success('✅ Room created successfully!');
+    }
+
+    handleCloseModal();
+    fetchRooms();
+
+  } catch (error) {
+    console.error('Error:', error);
+    toast.error(`❌ ${error.response?.data?.message || 'Error saving room'}`);
+  } finally {
+    setUploading(false);
+  }
+};
 
 
   const handleEdit = (room) => {
@@ -421,7 +414,7 @@ const RoomsManagementPage = () => {
               images={formData.photos}
               onChange={handlePhotosChange}
               maxImages={10}
-              acceptFiles={!editingRoom}
+              
             />
           </div>
 
