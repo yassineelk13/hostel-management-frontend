@@ -288,39 +288,7 @@ const PackDetailPage = () => {
                 </>
               )}
 
-              <div className="w-full h-px bg-dark/10" />
-
-              {/* Prices per night — grille nuits × room type */}
-              <div>
-                <p className="text-xs font-bold tracking-[0.25em] text-dark/50 uppercase mb-6">
-                  Prices per night
-                </p>
-                {ROOM_TYPES.filter(rt => roomTypeHasPrices(rt.key)).map(({ key, label }) => {
-                  const nightsForType = (pack.nightPrices || [])
-                    .filter(np => np.roomType === key)
-                    .sort((a, b) => a.nights - b.nights);
-                  return (
-                    <div key={key} className="mb-6">
-                      <div className="flex items-center gap-2 mb-3">
-                        <FaBed className="text-primary/40 text-sm" />
-                        <span className="text-sm font-semibold text-dark">{label}</span>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pl-5">
-                        {nightsForType.map(np => (
-                          <div key={np.nights} className="bg-white border border-dark/5 rounded-xl px-3 py-2.5 text-center">
-                            <p className="text-[10px] text-dark/40 uppercase tracking-wide mb-1">{np.nights} nights</p>
-                            {np.regularPrice && Number(np.regularPrice) > Number(np.promoPrice) && (
-                              <p className="text-[10px] text-dark/30 line-through">{formatPrice(np.regularPrice)}</p>
-                            )}
-                            <p className="text-sm font-bold text-primary">{formatPrice(np.promoPrice)}</p>
-                            <p className="text-[9px] text-dark/30">/night</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+           
 
             </div>
 
@@ -328,19 +296,21 @@ const PackDetailPage = () => {
             <div className="lg:col-span-1">
               <div className="lg:sticky lg:top-24 bg-white rounded-2xl shadow-2xl overflow-hidden">
 
-                {/* Card header */}
-                <div className="bg-dark px-6 py-5">
-                  <p className="text-white/60 text-xs uppercase tracking-widest mb-1">Starting from</p>
-                  {(() => {
-                    const prices = [pack.minPriceDortoir, pack.minPriceSingle, pack.minPriceDouble].filter(Boolean);
-                    const min = prices.length > 0 ? Math.min(...prices) : null;
-                    return min ? (
-                      <p className="text-white text-2xl font-display font-bold">
-                        {formatPrice(min)}<span className="text-sm font-normal text-white/60"> / night</span>
-                      </p>
-                    ) : null;
-                  })()}
-                </div>
+               {/* Card header — prix 7 nuits */}
+<div className="bg-dark px-6 py-5">
+  <p className="text-white/60 text-xs uppercase tracking-widest mb-1">7 nights from</p>
+  {(() => {
+    const entries = (pack.nightPrices || []).filter(np => np.nights === 7);
+    const prices  = entries.map(np => Number(np.promoPrice)).filter(p => p > 0);
+    const min     = prices.length > 0 ? Math.min(...prices) : null;
+    return min ? (
+      <p className="text-white text-2xl font-display font-bold">
+        {formatPrice(min)}
+        <span className="text-sm font-normal text-white/60"> / person / night</span>
+      </p>
+    ) : null;
+  })()}
+</div>
 
                 <div className="p-6 space-y-5">
 

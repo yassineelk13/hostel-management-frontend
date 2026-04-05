@@ -26,16 +26,18 @@ const PacksPage = () => {
   };
 
  // ✅ NOUVEAU — utilise les champs minPrice* envoyés par le backend
-const getFromPrice = (pack) => {
-  const prices = [pack.minPriceDortoir, pack.minPriceSingle, pack.minPriceDouble].filter(Boolean);
+
+const getPrice7Nights = (pack) => {
+  if (!pack?.nightPrices?.length) return null;
+  const entries = pack.nightPrices.filter(np => np.nights === 7);
+  const prices = entries.map(np => Number(np.promoPrice)).filter(p => p > 0);
   return prices.length > 0 ? Math.min(...prices) : null;
 };
 
-const getMinRegularPrice = (pack) => {
-  if (!pack.nightPrices?.length) return null;
-  const prices = pack.nightPrices
-    .filter(np => np.regularPrice)
-    .map(np => Number(np.regularPrice));
+const getRegularPrice7Nights = (pack) => {
+  if (!pack?.nightPrices?.length) return null;
+  const entries = pack.nightPrices.filter(np => np.nights === 7 && np.regularPrice);
+  const prices = entries.map(np => Number(np.regularPrice)).filter(p => p > 0);
   return prices.length > 0 ? Math.min(...prices) : null;
 };
 
@@ -123,27 +125,38 @@ const getMinRegularPrice = (pack) => {
                       )}
 
                       {/* Price */}
-                      <div className="mb-8 pb-8 border-b border-dark/10">
-                        <p className="text-xs text-dark/40 mb-1 uppercase tracking-widest">
-                          3 – 10 nights
-                        </p>
-                        {fromPrice && (
-                          <div className="flex items-baseline gap-2">
-                            {regularPrice && regularPrice > fromPrice && (
-                              <span className="text-dark/40 text-sm line-through">
-                                from {formatPrice(regularPrice)}
-                              </span>
-                            )}
-                            <p className="text-dark/60 text-base">
-                              from{' '}
-                              <span className="text-4xl font-display font-bold text-primary">
-                                {formatPrice(fromPrice)}
-                              </span>
-                              {' '}<span className="text-sm text-dark/50">/ person / night</span>
-                            </p>
-                          </div>
-                        )}
-                      </div>
+                     
+<div className="mb-8 pb-8 border-b border-dark/10">
+  {(() => {
+    const price7n   = getPrice7Nights(pack);
+    const regular7n = getRegularPrice7Nights(pack);
+    return price7n ? (
+      <>
+        <p className="text-xs text-dark/40 mb-1 uppercase tracking-widest">
+          7 nights
+        </p>
+        <div className="flex items-baseline gap-2 flex-wrap">
+          {regular7n && regular7n > price7n && (
+            <span className="text-dark/40 text-sm line-through">
+              from {formatPrice(regular7n)}
+            </span>
+          )}
+          <p className="text-dark/60 text-base">
+            from{' '}
+            <span className="text-4xl font-display font-bold text-primary">
+              {formatPrice(price7n)}
+            </span>
+            {' '}<span className="text-sm text-dark/50">/ person / night</span>
+          </p>
+        </div>
+      </>
+    ) : (
+      <p className="text-xs text-dark/40 uppercase tracking-widest">
+        Contact us for pricing
+      </p>
+    );
+  })()}
+</div>
 
                       {/* Buttons — exactement comme la photo */}
                       <div className="flex items-center gap-4">
