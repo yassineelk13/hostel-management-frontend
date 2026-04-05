@@ -69,8 +69,7 @@ const getRegularPrice7Nights = (pack) => {
         ) : (
           <div className="space-y-0">
             {packs.map((pack, index) => {
-              const fromPrice = getFromPrice(pack);
-              const regularPrice = getMinRegularPrice(pack);
+              
 
               return (
                 <div key={pack.id}>

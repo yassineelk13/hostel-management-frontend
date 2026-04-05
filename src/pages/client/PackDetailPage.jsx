@@ -306,7 +306,7 @@ const PackDetailPage = () => {
     return min ? (
       <p className="text-white text-2xl font-display font-bold">
         {formatPrice(min)}
-        <span className="text-sm font-normal text-white/60"> / person / night</span>
+        <span className="text-sm font-normal text-white/60"> / person / 7 night</span>
       </p>
     ) : null;
   })()}
@@ -314,44 +314,32 @@ const PackDetailPage = () => {
 
                 <div className="p-6 space-y-5">
 
-                  {/* Room type */}
-                  <div>
-                    <p className="text-xs font-bold tracking-widest text-dark/40 uppercase mb-3">Room type</p>
-                    <div className="space-y-2">
-                      {ROOM_TYPES.filter(rt => roomTypeHasPrices(rt.key)).map(({ key, label }) => {
-                        const minPromo = getMinPrice(key);
-                        const minRegular = getMinRegularPrice(key);
-                        return (
-                          <label key={key}
-                            className={`flex items-center justify-between p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                              selectedRoomType === key
-                                ? 'border-primary bg-primary/5'
-                                : 'border-gray-100 hover:border-gray-200 bg-gray-50'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                                selectedRoomType === key ? 'border-primary' : 'border-gray-300'
-                              }`}>
-                                {selectedRoomType === key && <div className="w-2 h-2 rounded-full bg-primary" />}
-                              </div>
-                              <span className="text-sm font-medium text-dark">{label}</span>
-                            </div>
-                            <div className="text-right">
-                              {minRegular && minRegular > minPromo && (
-                                <div className="text-[10px] text-dark/30 line-through">from {formatPrice(minRegular)}</div>
-                              )}
-                              <div className="text-xs font-bold text-primary">from {formatPrice(minPromo)}</div>
-                            </div>
-                            <input type="radio" className="sr-only" name="roomType" value={key}
-                              checked={selectedRoomType === key}
-                              onChange={() => { setSelectedRoomType(key); setSelectedNights(''); }}
-                            />
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
+                {/* Room type */}
+<div>
+  <p className="text-xs font-bold tracking-widest text-dark/40 uppercase mb-3">Room type</p>
+  <div className="space-y-2">
+    {ROOM_TYPES.filter(rt => roomTypeHasPrices(rt.key)).map(({ key, label }) => (
+      <label key={key}
+        className={`flex items-center gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+          selectedRoomType === key
+            ? 'border-primary bg-primary/5'
+            : 'border-gray-100 hover:border-gray-200 bg-gray-50'
+        }`}
+      >
+        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+          selectedRoomType === key ? 'border-primary' : 'border-gray-300'
+        }`}>
+          {selectedRoomType === key && <div className="w-2 h-2 rounded-full bg-primary" />}
+        </div>
+        <span className="text-sm font-medium text-dark">{label}</span>
+        <input type="radio" className="sr-only" name="roomType" value={key}
+          checked={selectedRoomType === key}
+          onChange={() => { setSelectedRoomType(key); setSelectedNights(''); }}
+        />
+      </label>
+    ))}
+  </div>
+</div>
 
                   {/* Nights */}
                   <div>
