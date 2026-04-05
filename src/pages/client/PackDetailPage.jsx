@@ -2,30 +2,21 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   FaCheck, FaArrowLeft, FaBed, FaChevronLeft, FaChevronRight,
-  FaMoon, FaConciergeBell, FaUtensils, FaWifi, FaCar,
+  FaConciergeBell, FaUtensils, FaWifi, FaCar,
   FaSwimmer, FaCamera, FaHeart, FaStar
 } from 'react-icons/fa';
-import Card from '../../components/common/Card';
-import Button from '../../components/common/Button';
 import Loader from '../../components/common/Loader';
 import { packsAPI } from '../../services/api';
 import { formatPrice } from '../../utils/priceFormatter';
 import { bypassCloudinaryCache } from '../../utils/imageHelper';
 
-const availableNights = selectedRoomType
-  ? (pack?.nightPrices ?? [])
-      .filter(np => np.roomType === selectedRoomType)
-      .map(np => np.nights)
-      .sort((a, b) => a - b)
-  : Array.from({ length: 8 }, (_, i) => i + 3);
-
+// ✅ Constantes statiques — OK hors composant
 const ROOM_TYPES = [
   { key: 'DORTOIR', label: 'Dormitory' },
   { key: 'SINGLE',  label: 'Single'    },
   { key: 'DOUBLE',  label: 'Double'    },
 ];
 
-// ✅ Icône auto selon le nom du service
 const getServiceIcon = (name = '') => {
   const n = name.toLowerCase();
   if (n.includes('dinner') || n.includes('meal') || n.includes('food') || n.includes('breakfast')) return FaUtensils;
@@ -47,6 +38,14 @@ const PackDetailPage = () => {
   const [selectedRoomType, setSelectedRoomType] = useState(null);
   const [selectedNights, setSelectedNights] = useState('');
   const [checkInDate, setCheckInDate] = useState('');
+
+  // ✅ ICI — à l'intérieur du composant
+  const availableNights = selectedRoomType
+    ? (pack?.nightPrices ?? [])
+        .filter(np => np.roomType === selectedRoomType)
+        .map(np => np.nights)
+        .sort((a, b) => a - b)
+    : Array.from({ length: 8 }, (_, i) => i + 3);
 
   useEffect(() => { fetchPack(); }, [id]);
 
@@ -71,42 +70,39 @@ const PackDetailPage = () => {
     setCurrentImageIndex(prev => prev === 0 ? pack.photos.length - 1 : prev - 1);
   };
 
-// ✅ NOUVEAU — lookup dans nightPrices par roomType + nights sélectionnés
-const getNightPriceEntry = (roomType, nights) =>
-  pack?.nightPrices?.find(
-    np => np.roomType === roomType && np.nights === parseInt(nights)
-  ) ?? null;
+  const getNightPriceEntry = (roomType, nights) =>
+    pack?.nightPrices?.find(
+      np => np.roomType === roomType && np.nights === parseInt(nights)
+    ) ?? null;
 
-const getPromoPrice = () => {
-  if (!selectedRoomType || !selectedNights) return null;
-  return getNightPriceEntry(selectedRoomType, selectedNights)?.promoPrice ?? null;
-};
+  const getPromoPrice = () => {
+    if (!selectedRoomType || !selectedNights) return null;
+    return getNightPriceEntry(selectedRoomType, selectedNights)?.promoPrice ?? null;
+  };
 
-const getRegularPrice = () => {
-  if (!selectedRoomType || !selectedNights) return null;
-  return getNightPriceEntry(selectedRoomType, selectedNights)?.regularPrice ?? null;
-};
+  const getRegularPrice = () => {
+    if (!selectedRoomType || !selectedNights) return null;
+    return getNightPriceEntry(selectedRoomType, selectedNights)?.regularPrice ?? null;
+  };
 
-// Prix minimum par room type (pour l'affichage "à partir de")
-const getMinPrice = (roomType) => {
-  if (!pack?.nightPrices) return null;
-  const prices = pack.nightPrices
-    .filter(np => np.roomType === roomType)
-    .map(np => Number(np.promoPrice));
-  return prices.length > 0 ? Math.min(...prices) : null;
-};
+  const getMinPrice = (roomType) => {
+    if (!pack?.nightPrices) return null;
+    const prices = pack.nightPrices
+      .filter(np => np.roomType === roomType)
+      .map(np => Number(np.promoPrice));
+    return prices.length > 0 ? Math.min(...prices) : null;
+  };
 
-const getMinRegularPrice = (roomType) => {
-  if (!pack?.nightPrices) return null;
-  const prices = pack.nightPrices
-    .filter(np => np.roomType === roomType && np.regularPrice)
-    .map(np => Number(np.regularPrice));
-  return prices.length > 0 ? Math.min(...prices) : null;
-};
+  const getMinRegularPrice = (roomType) => {
+    if (!pack?.nightPrices) return null;
+    const prices = pack.nightPrices
+      .filter(np => np.roomType === roomType && np.regularPrice)
+      .map(np => Number(np.regularPrice));
+    return prices.length > 0 ? Math.min(...prices) : null;
+  };
 
-// Vérifie si un roomType a des prix définis
-const roomTypeHasPrices = (roomType) =>
-  pack?.nightPrices?.some(np => np.roomType === roomType) ?? false;
+  const roomTypeHasPrices = (roomType) =>
+    pack?.nightPrices?.some(np => np.roomType === roomType) ?? false;
 
   const totalPrice = selectedRoomType && selectedNights
     ? (getPromoPrice() || 0) * parseInt(selectedNights)
@@ -114,10 +110,10 @@ const roomTypeHasPrices = (roomType) =>
 
   const checkOutDate = checkInDate && selectedNights
     ? (() => {
-      const d = new Date(checkInDate);
-      d.setDate(d.getDate() + parseInt(selectedNights));
-      return d.toISOString().split('T')[0];
-    })()
+        const d = new Date(checkInDate);
+        d.setDate(d.getDate() + parseInt(selectedNights));
+        return d.toISOString().split('T')[0];
+      })()
     : null;
 
   const handleBooking = () => {
@@ -143,13 +139,12 @@ const roomTypeHasPrices = (roomType) =>
   if (loading) return <Loader />;
   if (!pack) return null;
 
-  // ✅ Services inclus dans le pack
   const includedServices = pack.services || [];
 
   return (
     <div className="min-h-screen bg-[#f5f0eb]">
 
-      {/* ── Top nav ── */}
+      {/* Top nav */}
       <div className="fixed top-0 left-0 right-0 z-40 bg-[#f5f0eb]/90 backdrop-blur-sm border-b border-dark/5">
         <div className="max-w-6xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between">
           <button
@@ -172,7 +167,7 @@ const roomTypeHasPrices = (roomType) =>
 
       <div className="pt-16">
 
-        {/* ── Hero image ── */}
+        {/* Hero image */}
         <div className="relative w-full h-[55vh] md:h-[65vh] overflow-hidden bg-dark/10 group">
           {pack.photos && pack.photos.length > 0 ? (
             <img
@@ -208,7 +203,6 @@ const roomTypeHasPrices = (roomType) =>
             </>
           )}
 
-          {/* Pack name on image */}
           <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12">
             <div className="max-w-5xl mx-auto">
               <h1 className="text-4xl md:text-6xl font-display font-bold text-white leading-tight drop-shadow-lg">
@@ -218,21 +212,19 @@ const roomTypeHasPrices = (roomType) =>
           </div>
         </div>
 
-        {/* ── Main content ── */}
+        {/* Main content */}
         <div className="max-w-5xl mx-auto px-4 sm:px-8 py-12 md:py-16">
           <div className="grid lg:grid-cols-3 gap-12 lg:gap-16">
 
-            {/* ── LEFT ── */}
+            {/* LEFT */}
             <div className="lg:col-span-2 space-y-12">
 
-              {/* Description */}
               <p className="text-dark-light text-base md:text-lg leading-relaxed">
                 {pack.description}
               </p>
 
               <div className="w-full h-px bg-dark/10" />
 
-              {/* What's included — features */}
               {pack.includedFeatures && pack.includedFeatures.length > 0 && (
                 <div>
                   <p className="text-xs font-bold tracking-[0.25em] text-dark/50 uppercase mb-6">
@@ -251,62 +243,40 @@ const roomTypeHasPrices = (roomType) =>
                 </div>
               )}
 
-              {/* ✅ ── INCLUDED SERVICES ── */}
               {includedServices.length > 0 && (
                 <>
                   <div className="w-full h-px bg-dark/10" />
-
                   <div>
-                    {/* Section header */}
                     <div className="flex items-center gap-3 mb-8">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                         <FaStar className="text-primary text-xs" />
                       </div>
                       <div>
-                        <p className="text-xs font-bold tracking-[0.25em] text-dark/50 uppercase">
-                          Included Services
-                        </p>
-                        <p className="text-xs text-dark/40 mt-0.5">
-                          Everything below is already included in your package price
-                        </p>
+                        <p className="text-xs font-bold tracking-[0.25em] text-dark/50 uppercase">Included Services</p>
+                        <p className="text-xs text-dark/40 mt-0.5">Everything below is already included in your package price</p>
                       </div>
                     </div>
-
-                    {/* Services grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {includedServices.map((service, i) => {
                         const Icon = getServiceIcon(service.name);
                         return (
-                          <div
-                            key={service.id || i}
+                          <div key={service.id || i}
                             className="group flex items-center gap-4 p-4 bg-white rounded-2xl border border-dark/5 hover:border-primary/20 hover:shadow-md transition-all duration-300"
-                            style={{
-                              animation: 'fadeUp 0.4s ease-out both',
-                              animationDelay: `${i * 60}ms`
-                            }}
+                            style={{ animation: 'fadeUp 0.4s ease-out both', animationDelay: `${i * 60}ms` }}
                           >
-                            {/* Icon */}
-                            <div className="w-10 h-10 rounded-xl bg-primary/8 group-hover:bg-primary/15 flex items-center justify-center flex-shrink-0 transition-colors duration-300">
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 group-hover:bg-primary/15 flex items-center justify-center flex-shrink-0 transition-colors duration-300">
                               <Icon className="text-primary text-sm" />
                             </div>
-
-                            {/* Info */}
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-dark truncate">{service.name}</p>
                               <p className="text-[11px] text-dark/40 mt-0.5">
                                 {service.priceType === 'PER_NIGHT' ? 'Per night' : 'Fixed — included'}
                               </p>
                             </div>
-
-                            {/* Price */}
                             <div className="text-right flex-shrink-0">
                               <p className="text-sm font-bold text-primary">{formatPrice(service.price)}</p>
-                              {service.priceType === 'PER_NIGHT' && (
-                                <p className="text-[10px] text-dark/30">/night</p>
-                              )}
+                              {service.priceType === 'PER_NIGHT' && <p className="text-[10px] text-dark/30">/night</p>}
                             </div>
-
-                            {/* Included badge */}
                             <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                               <FaCheck className="text-green-500 text-[8px]" />
                             </div>
@@ -314,101 +284,62 @@ const roomTypeHasPrices = (roomType) =>
                         );
                       })}
                     </div>
-
-                    {/* Total services value */}
-                    {(() => {
-                      const totalServicesValue = includedServices.reduce((sum, s) => sum + (s.price || 0), 0);
-                      return totalServicesValue > 0 ? (
-                        <div className="mt-4 flex items-center justify-between px-4 py-3 bg-green-50 border border-green-100 rounded-xl">
-                          <div className="flex items-center gap-2">
-                            <FaCheck className="text-green-500 text-xs flex-shrink-0" />
-                            <span className="text-xs text-green-700 font-medium">
-                              Total services value included
-                            </span>
-                          </div>
-                          <span className="text-sm font-bold text-green-700">
-                            {formatPrice(totalServicesValue)}
-                            {includedServices.some(s => s.priceType === 'PER_NIGHT') && (
-                              <span className="text-xs font-normal text-green-600"> +/night</span>
-                            )}
-                          </span>
-                        </div>
-                      ) : null;
-                    })()}
                   </div>
                 </>
               )}
 
               <div className="w-full h-px bg-dark/10" />
 
-              {/* Prices per room type */}
-              // ✅ NOUVEAU — tableau nuits × room type
-<div>
-  <p className="text-xs font-bold tracking-[0.25em] text-dark/50 uppercase mb-6">
-    Prices per night
-  </p>
-
-  {ROOM_TYPES.filter(rt => roomTypeHasPrices(rt.key)).map(({ key, label }) => {
-    const nightsForType = pack.nightPrices
-      .filter(np => np.roomType === key)
-      .sort((a, b) => a.nights - b.nights);
-
-    return (
-      <div key={key} className="mb-6">
-        {/* Room type header */}
-        <div className="flex items-center gap-2 mb-3">
-          <FaBed className="text-primary/40 text-sm" />
-          <span className="text-sm font-semibold text-dark">{label}</span>
-        </div>
-
-        {/* Nuits grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pl-5">
-          {nightsForType.map(np => (
-            <div
-              key={np.nights}
-              className="bg-white border border-dark/5 rounded-xl px-3 py-2.5 text-center"
-            >
-              <p className="text-[10px] text-dark/40 uppercase tracking-wide mb-1">
-                {np.nights} nights
-              </p>
-              {np.regularPrice && Number(np.regularPrice) > Number(np.promoPrice) && (
-                <p className="text-[10px] text-dark/30 line-through">
-                  {formatPrice(np.regularPrice)}
+              {/* Prices per night — grille nuits × room type */}
+              <div>
+                <p className="text-xs font-bold tracking-[0.25em] text-dark/50 uppercase mb-6">
+                  Prices per night
                 </p>
-              )}
-              <p className="text-sm font-bold text-primary">
-                {formatPrice(np.promoPrice)}
-              </p>
-              <p className="text-[9px] text-dark/30">/night</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  })}
-</div>
+                {ROOM_TYPES.filter(rt => roomTypeHasPrices(rt.key)).map(({ key, label }) => {
+                  const nightsForType = (pack.nightPrices || [])
+                    .filter(np => np.roomType === key)
+                    .sort((a, b) => a.nights - b.nights);
+                  return (
+                    <div key={key} className="mb-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <FaBed className="text-primary/40 text-sm" />
+                        <span className="text-sm font-semibold text-dark">{label}</span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pl-5">
+                        {nightsForType.map(np => (
+                          <div key={np.nights} className="bg-white border border-dark/5 rounded-xl px-3 py-2.5 text-center">
+                            <p className="text-[10px] text-dark/40 uppercase tracking-wide mb-1">{np.nights} nights</p>
+                            {np.regularPrice && Number(np.regularPrice) > Number(np.promoPrice) && (
+                              <p className="text-[10px] text-dark/30 line-through">{formatPrice(np.regularPrice)}</p>
+                            )}
+                            <p className="text-sm font-bold text-primary">{formatPrice(np.promoPrice)}</p>
+                            <p className="text-[9px] text-dark/30">/night</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
 
             </div>
 
-            {/* ── RIGHT : Booking card ── */}
+            {/* RIGHT — Booking card */}
             <div className="lg:col-span-1">
               <div className="lg:sticky lg:top-24 bg-white rounded-2xl shadow-2xl overflow-hidden">
 
                 {/* Card header */}
                 <div className="bg-dark px-6 py-5">
                   <p className="text-white/60 text-xs uppercase tracking-widest mb-1">Starting from</p>
-                  // ✅ NOUVEAU
-{(() => {
-  const prices = [
-    pack.minPriceDortoir, pack.minPriceSingle, pack.minPriceDouble
-  ].filter(Boolean);
-  const min = prices.length > 0 ? Math.min(...prices) : null;
-  return min ? (
-    <p className="text-white text-2xl font-display font-bold">
-      {formatPrice(min)}<span className="text-sm font-normal text-white/60"> / night</span>
-    </p>
-  ) : null;
-})()}
+                  {(() => {
+                    const prices = [pack.minPriceDortoir, pack.minPriceSingle, pack.minPriceDouble].filter(Boolean);
+                    const min = prices.length > 0 ? Math.min(...prices) : null;
+                    return min ? (
+                      <p className="text-white text-2xl font-display font-bold">
+                        {formatPrice(min)}<span className="text-sm font-normal text-white/60"> / night</span>
+                      </p>
+                    ) : null;
+                  })()}
                 </div>
 
                 <div className="p-6 space-y-5">
@@ -417,44 +348,38 @@ const roomTypeHasPrices = (roomType) =>
                   <div>
                     <p className="text-xs font-bold tracking-widest text-dark/40 uppercase mb-3">Room type</p>
                     <div className="space-y-2">
-              // ✅ NOUVEAU — utilise getMinPrice par roomType
-{ROOM_TYPES.filter(rt => roomTypeHasPrices(rt.key)).map(({ key, label }) => {
-  const minPromo = getMinPrice(key);
-  const minRegular = getMinRegularPrice(key);
-  return (
-    <label
-      key={key}
-      className={`flex items-center justify-between p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-        selectedRoomType === key
-          ? 'border-primary bg-primary/5'
-          : 'border-gray-100 hover:border-gray-200 bg-gray-50'
-      }`}
-    >
-      <div className="flex items-center gap-3">
-        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-          selectedRoomType === key ? 'border-primary' : 'border-gray-300'
-        }`}>
-          {selectedRoomType === key && <div className="w-2 h-2 rounded-full bg-primary" />}
-        </div>
-        <span className="text-sm font-medium text-dark">{label}</span>
-      </div>
-      <div className="text-right">
-        {minRegular && minRegular > minPromo && (
-          <div className="text-[10px] text-dark/30 line-through">from {formatPrice(minRegular)}</div>
-        )}
-        <div className="text-xs font-bold text-primary">
-          from {formatPrice(minPromo)}
-        </div>
-      </div>
-      <input type="radio" className="sr-only" name="roomType" value={key}
-        checked={selectedRoomType === key} onChange={() => {
-          setSelectedRoomType(key);
-          setSelectedNights(''); // ✅ reset nights quand roomType change
-        }}
-      />
-    </label>
-  );
-})}
+                      {ROOM_TYPES.filter(rt => roomTypeHasPrices(rt.key)).map(({ key, label }) => {
+                        const minPromo = getMinPrice(key);
+                        const minRegular = getMinRegularPrice(key);
+                        return (
+                          <label key={key}
+                            className={`flex items-center justify-between p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                              selectedRoomType === key
+                                ? 'border-primary bg-primary/5'
+                                : 'border-gray-100 hover:border-gray-200 bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                                selectedRoomType === key ? 'border-primary' : 'border-gray-300'
+                              }`}>
+                                {selectedRoomType === key && <div className="w-2 h-2 rounded-full bg-primary" />}
+                              </div>
+                              <span className="text-sm font-medium text-dark">{label}</span>
+                            </div>
+                            <div className="text-right">
+                              {minRegular && minRegular > minPromo && (
+                                <div className="text-[10px] text-dark/30 line-through">from {formatPrice(minRegular)}</div>
+                              )}
+                              <div className="text-xs font-bold text-primary">from {formatPrice(minPromo)}</div>
+                            </div>
+                            <input type="radio" className="sr-only" name="roomType" value={key}
+                              checked={selectedRoomType === key}
+                              onChange={() => { setSelectedRoomType(key); setSelectedNights(''); }}
+                            />
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -467,9 +392,9 @@ const roomTypeHasPrices = (roomType) =>
                       className="w-full px-4 py-3.5 border-2 border-gray-100 bg-gray-50 rounded-xl focus:border-primary focus:bg-white focus:outline-none text-sm text-dark transition-colors"
                     >
                       <option value="">Choose duration...</option>
-                     {availableNights.map(n => (
-  <option key={n} value={n}>{n} nights</option>
-))}
+                      {availableNights.map(n => (
+                        <option key={n} value={n}>{n} nights</option>
+                      ))}
                     </select>
                   </div>
 
@@ -485,19 +410,15 @@ const roomTypeHasPrices = (roomType) =>
                     />
                   </div>
 
-                  {/* Departure auto */}
                   {checkOutDate && (
                     <div className="flex items-center justify-between text-sm py-2 px-1">
                       <span className="text-dark/50">Departure</span>
                       <span className="font-medium text-dark">
-                        {new Date(checkOutDate).toLocaleDateString('en-US', {
-                          day: 'numeric', month: 'long', year: 'numeric'
-                        })}
+                        {new Date(checkOutDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </span>
                     </div>
                   )}
 
-                  {/* Total */}
                   {totalPrice !== null && (
                     <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-4">
                       <div className="flex items-center justify-between">
@@ -506,17 +427,13 @@ const roomTypeHasPrices = (roomType) =>
                             {ROOM_TYPES.find(r => r.key === selectedRoomType)?.label} · {selectedNights} nights
                           </p>
                           <p className="text-xs text-dark/40">
-                            {/* ✅ Note DORTOIR */}
-                            {selectedRoomType === 'DORTOIR'
-                              ? 'Price per bed — multiply by number of beds'
-                              : 'Estimated total'}
+                            {selectedRoomType === 'DORTOIR' ? 'Price per bed — multiply by number of beds' : 'Estimated total'}
                           </p>
                         </div>
                         <span className="text-2xl font-display font-bold text-primary">
                           {formatPrice(totalPrice)}
                         </span>
                       </div>
-                      {/* ✅ Badge avertissement DORTOIR */}
                       {selectedRoomType === 'DORTOIR' && (
                         <p className="text-[11px] text-primary/60 mt-2 pt-2 border-t border-primary/10">
                           ⚡ Final price will be calculated based on beds selected at next step
@@ -525,7 +442,6 @@ const roomTypeHasPrices = (roomType) =>
                     </div>
                   )}
 
-                  {/* CTA */}
                   <button
                     onClick={handleBooking}
                     disabled={!selectedRoomType || !selectedNights || !checkInDate}
@@ -534,7 +450,6 @@ const roomTypeHasPrices = (roomType) =>
                     Confirm Reservation
                   </button>
 
-                  {/* Trust */}
                   <div className="space-y-2 pt-1">
                     <div className="flex items-center gap-2.5 text-xs text-dark/40">
                       <FaCheck className="text-green-500 flex-shrink-0" />
@@ -554,7 +469,7 @@ const roomTypeHasPrices = (roomType) =>
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(12px); }
           to   { opacity: 1; transform: translateY(0); }
