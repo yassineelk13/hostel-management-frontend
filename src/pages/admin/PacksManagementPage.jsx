@@ -13,7 +13,9 @@ import { bypassCloudinaryCache } from '../../utils/imageHelper';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+
 const NIGHTS = Array.from({ length: 8 }, (_, i) => i + 3); // 3 → 10
+
 
 const ROOM_TYPES = [
   { key: 'DORTOIR', label: 'Dormitory', color: 'text-green-600' },
@@ -21,11 +23,12 @@ const ROOM_TYPES = [
   { key: 'DOUBLE',  label: 'Double',    color: 'text-purple-600'},
 ];
 
-// Initialise 24 entrées vides (3 types × 8 nuits)
+
 const initNightPrices = () =>
   ROOM_TYPES.flatMap(rt =>
     NIGHTS.map(n => ({ roomType: rt.key, nights: n, promoPrice: '', regularPrice: '' }))
   );
+
 
 const EMPTY_FORM = {
   name: '',
@@ -34,6 +37,7 @@ const EMPTY_FORM = {
   includedFeatures: [],
   photos: []
 };
+
 
 const PacksManagementPage = () => {
   const [packs, setPacks] = useState([]);
@@ -50,23 +54,26 @@ const PacksManagementPage = () => {
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [activePriceTab, setActivePriceTab] = useState('DORTOIR');
 
+
   useEffect(() => { fetchData(); }, []);
+
 
   const fetchData = async () => {
     try {
       const res = await packsAPI.getAll();
       setPacks(res.data.data);
     } catch {
-      toast.error('❌ Error loading packages');
+      toast.error('\u274C Error loading packages');
     } finally {
       setLoading(false);
     }
   };
 
+
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const handlePhotosChange = (photos) => setFormData({ ...formData, photos });
 
-  // ── Night price change ──
+
   const handleNightPriceChange = (roomType, nights, field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -78,7 +85,7 @@ const PacksManagementPage = () => {
     }));
   };
 
-  // ── Features ──
+
   const handleAddFeature = () => {
     const trimmed = newFeature.trim();
     if (!trimmed) return;
@@ -87,6 +94,7 @@ const PacksManagementPage = () => {
     setShowFeatureInput(false);
   };
 
+
   const handleRemoveFeature = (index) => {
     setFormData(prev => ({
       ...prev,
@@ -94,43 +102,47 @@ const PacksManagementPage = () => {
     }));
   };
 
+
   const handleFeatureKeyDown = (e) => {
     if (e.key === 'Enter') { e.preventDefault(); handleAddFeature(); }
   };
 
-  // ── Submit ──
+
+  // ── Submit ── FIX: upload photos en création ET en édition
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const validNightPrices = formData.nightPrices.filter(np => np.promoPrice !== '');
     if (validNightPrices.length === 0) {
-      toast.error('❌ Add at least one price for at least one room type!');
+      toast.error('\u274C Add at least one price for at least one room type!');
       return;
     }
     if (formData.includedFeatures.length === 0) {
-      toast.error('❌ Add at least one feature!');
+      toast.error('\u274C Add at least one feature!');
       return;
     }
 
     setUploading(true);
     try {
-      let photoUrls = [];
+      // FIX 1 : sépare les URLs existantes et les nouveaux fichiers
+      const existingUrls = formData.photos.filter(p => typeof p === 'string');
+      const newFiles     = formData.photos.filter(p => p instanceof File);
 
-      if (!editingPack && formData.photos.length > 0 && formData.photos[0] instanceof File) {
-        setUploadProgress({ current: 0, total: formData.photos.length });
-        for (let i = 0; i < formData.photos.length; i++) {
+      let photoUrls = [...existingUrls]; // garde toujours les URLs existantes
+
+      if (newFiles.length > 0) {
+        setUploadProgress({ current: 0, total: newFiles.length });
+        for (let i = 0; i < newFiles.length; i++) {
           const fd = new FormData();
-          fd.append('photo', formData.photos[i]);
+          fd.append('photo', newFiles[i]);
           try {
             const res = await roomsAPI.uploadPhoto(fd);
             if (res.data.success) {
               photoUrls.push(res.data.data);
-              setUploadProgress({ current: i + 1, total: formData.photos.length });
+              setUploadProgress({ current: i + 1, total: newFiles.length });
             }
-          } catch { toast.warning(`⚠️ Error uploading photo ${i + 1}`); }
+          } catch { toast.warning(`\u26A0\uFE0F Error uploading photo ${i + 1}`); }
         }
-      } else {
-        photoUrls = formData.photos.filter(p => typeof p === 'string');
       }
 
       const dataToSend = {
@@ -148,23 +160,23 @@ const PacksManagementPage = () => {
 
       if (editingPack) {
         await packsAPI.update(editingPack.id, dataToSend);
-        toast.success('✅ Package updated successfully!');
+        toast.success('\u2705 Package updated successfully!');
       } else {
         await packsAPI.create(dataToSend);
-        toast.success('✅ Package created successfully!');
+        toast.success('\u2705 Package created successfully!');
       }
 
       handleCloseModal();
       fetchData();
     } catch (error) {
-      toast.error(`❌ ${error.response?.data?.message || 'Error saving package'}`);
+      toast.error(`\u274C ${error.response?.data?.message || 'Error saving package'}`);
     } finally {
       setUploading(false);
       setUploadProgress({ current: 0, total: 0 });
     }
   };
 
-  // ── Edit ──
+
   const handleEdit = (pack) => {
     setEditingPack(pack);
     const nightPrices = initNightPrices().map(entry => {
@@ -191,38 +203,42 @@ const PacksManagementPage = () => {
     setShowModal(true);
   };
 
-  // ── Delete ──
+
   const handleDeleteClick = (pack) => { setPackToDelete(pack); setShowDeleteConfirm(true); };
   const handleCancelDelete = () => { setShowDeleteConfirm(false); setPackToDelete(null); setDeleting(false); };
+
 
   const handleDeactivateConfirm = async () => {
     if (!packToDelete) return;
     setDeleting(true);
     try {
       await packsAPI.delete(packToDelete.id);
-      toast.success('✅ Package deactivated!');
+      toast.success('\u2705 Package deactivated!');
       setShowDeleteConfirm(false); setPackToDelete(null); fetchData();
-    } catch { toast.error('❌ Error deactivating'); }
+    } catch { toast.error('\u274C Error deactivating'); }
     finally { setDeleting(false); }
   };
+
 
   const handlePermanentDeleteConfirm = async () => {
     if (!packToDelete) return;
     setDeleting(true);
     try {
       await packsAPI.deletePermanently(packToDelete.id);
-      toast.success('🗑️ Package deleted permanently!');
+      toast.success('\uD83D\uDDD1\uFE0F Package deleted permanently!');
       setShowDeleteConfirm(false); setPackToDelete(null); fetchData();
-    } catch { toast.error('❌ Error deleting permanently'); }
+    } catch { toast.error('\u274C Error deleting permanently'); }
     finally { setDeleting(false); }
   };
+
 
   const handleReactivate = async (id) => {
     try {
       await packsAPI.update(id, { isActive: true });
-      toast.success('✅ Package reactivated!'); fetchData();
-    } catch { toast.error('❌ Error reactivating'); }
+      toast.success('\u2705 Package reactivated!'); fetchData();
+    } catch { toast.error('\u274C Error reactivating'); }
   };
+
 
   const handleCloseModal = () => {
     setShowModal(false);
@@ -233,12 +249,13 @@ const PacksManagementPage = () => {
     setActivePriceTab('DORTOIR');
   };
 
-  // ── Helpers pour la carte ──
+
   const getFromPrice = (pack) => {
     if (!pack.nightPrices || pack.nightPrices.length === 0) return null;
     const prices = pack.nightPrices.map(np => Number(np.promoPrice)).filter(p => p > 0);
     return prices.length > 0 ? Math.min(...prices) : null;
   };
+
 
   const getMinPriceByRoomType = (pack, roomType) => {
     if (!pack.nightPrices) return null;
@@ -249,10 +266,13 @@ const PacksManagementPage = () => {
     return prices.length > 0 ? Math.min(...prices) : null;
   };
 
+
   const activePacks   = packs.filter(p => p.isActive !== false);
   const inactivePacks = packs.filter(p => p.isActive === false);
 
+
   if (loading) return <Loader />;
+
 
   return (
     <div className="space-y-4 sm:space-y-6 p-3 sm:p-4 md:p-6 animate-fade-in">
@@ -357,7 +377,6 @@ const PacksManagementPage = () => {
                 <h3 className="text-lg sm:text-xl font-bold text-dark mb-2 line-clamp-1">{pack.name}</h3>
                 <p className="text-dark-light text-xs sm:text-sm mb-4 line-clamp-2 leading-relaxed">{pack.description}</p>
 
-                {/* Prix par room type depuis nightPrices */}
                 <Card className="p-3 mb-4 bg-gradient-to-br from-pink-50 to-rose-50 border-2 border-pink-200">
                   <p className="text-[10px] font-bold text-pink-700 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                     <FaBed className="flex-shrink-0" /> Starting price per night
@@ -379,7 +398,6 @@ const PacksManagementPage = () => {
                   </div>
                 </Card>
 
-                {/* Features */}
                 {pack.includedFeatures && pack.includedFeatures.length > 0 && (
                   <div className="mb-4">
                     <p className="text-[10px] font-bold text-dark mb-2 flex items-center gap-1.5">
@@ -388,7 +406,7 @@ const PacksManagementPage = () => {
                     <div className="flex flex-wrap gap-1.5">
                       {pack.includedFeatures.slice(0, 3).map((f, i) => (
                         <span key={i} className="text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">
-                          ✓ {f}
+                          \u2713 {f}
                         </span>
                       ))}
                       {pack.includedFeatures.length > 3 && (
@@ -400,7 +418,6 @@ const PacksManagementPage = () => {
                   </div>
                 )}
 
-                {/* Actions */}
                 <div className="flex gap-2 sm:gap-3">
                   <Button
                     variant="outline"
@@ -450,14 +467,14 @@ const PacksManagementPage = () => {
       >
         <form onSubmit={handleSubmit} className="space-y-6">
 
-          {/* Section 1 : Informations générales */}
           <div className="border border-gray-200 rounded-2xl p-5 space-y-4">
             <h3 className="text-sm font-bold text-dark flex items-center gap-2">
-              <span>📦</span> General Information
+              <span>\uD83D\uDCE6</span> General Information
             </h3>
             <div>
               <label className="block text-xs sm:text-sm font-bold text-dark mb-2">Photos</label>
-              <ImageUpload images={formData.photos} onChange={handlePhotosChange} maxImages={5} acceptFiles={!editingPack} />
+              {/* FIX 2 : acceptFiles toujours true pour permettre l'ajout en création ET en édition */}
+              <ImageUpload images={formData.photos} onChange={handlePhotosChange} maxImages={5} acceptFiles={true} />
             </div>
             <Input label="Package Name" name="name" value={formData.name} onChange={handleChange} placeholder="Ride All In" required />
             <div>
@@ -476,7 +493,6 @@ const PacksManagementPage = () => {
             </div>
           </div>
 
-          {/* Upload progress */}
           {uploading && uploadProgress.total > 0 && (
             <Card className="p-4 bg-blue-50 border-2 border-blue-300 animate-pulse">
               <div className="flex items-center justify-between mb-2">
@@ -492,18 +508,16 @@ const PacksManagementPage = () => {
             </Card>
           )}
 
-          {/* Section 2 : Prix par nuits — tabs room type */}
           <div className="border border-gray-200 rounded-2xl p-5 space-y-4">
             <div>
               <h3 className="text-sm font-bold text-dark flex items-center gap-2 mb-1">
-                <span>🛏️</span> Prices per night (3 to 10 nights)
+                <span>\uD83D\uDECF\uFE0F</span> Prices per night (3 to 10 nights)
               </h3>
               <p className="text-[11px] text-dark-light">
                 Leave empty to not offer that duration. Promo = displayed price · Regular = crossed-out price (optional)
               </p>
             </div>
 
-            {/* Tabs room type */}
             <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
               {ROOM_TYPES.map(({ key, label }) => (
                 <button
@@ -517,7 +531,6 @@ const PacksManagementPage = () => {
                   }`}
                 >
                   {label}
-                  {/* Badge nombre de prix définis */}
                   {(() => {
                     const count = formData.nightPrices.filter(
                       np => np.roomType === key && np.promoPrice !== ''
@@ -532,17 +545,16 @@ const PacksManagementPage = () => {
               ))}
             </div>
 
-            {/* Table nuits pour l'onglet actif */}
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-2 pr-3 text-dark/50 font-semibold w-20">Nights</th>
                     <th className="text-center py-2 px-2 text-dark/50 font-semibold">
-                      Promo Price (€) <span className="text-red-400">*</span>
+                      Promo Price (\u20AC) <span className="text-red-400">*</span>
                     </th>
                     <th className="text-center py-2 pl-2 text-dark/50 font-semibold">
-                      Regular Price (€) <span className="text-dark/30 font-normal">optional</span>
+                      Regular Price (\u20AC) <span className="text-dark/30 font-normal">optional</span>
                     </th>
                   </tr>
                 </thead>
@@ -568,7 +580,7 @@ const PacksManagementPage = () => {
                             min="0"
                             value={entry?.promoPrice || ''}
                             onChange={e => handleNightPriceChange(activePriceTab, n, 'promoPrice', e.target.value)}
-                            placeholder="—"
+                            placeholder="\u2014"
                             className="input w-full text-sm text-center"
                           />
                         </td>
@@ -579,7 +591,7 @@ const PacksManagementPage = () => {
                             min="0"
                             value={entry?.regularPrice || ''}
                             onChange={e => handleNightPriceChange(activePriceTab, n, 'regularPrice', e.target.value)}
-                            placeholder="—"
+                            placeholder="\u2014"
                             className="input w-full text-sm text-center opacity-70"
                           />
                         </td>
@@ -590,7 +602,6 @@ const PacksManagementPage = () => {
               </table>
             </div>
 
-            {/* Résumé total prix définis */}
             {(() => {
               const total = formData.nightPrices.filter(np => np.promoPrice !== '').length;
               return (
@@ -602,10 +613,9 @@ const PacksManagementPage = () => {
             })()}
           </div>
 
-          {/* Section 3 : Features */}
           <div className="border border-gray-200 rounded-2xl p-5 space-y-3">
             <h3 className="text-sm font-bold text-dark flex items-center gap-2">
-              <span>✅</span> What's included
+              <span>\u2705</span> What's included
             </h3>
 
             {formData.includedFeatures.length === 0 ? (
@@ -615,7 +625,7 @@ const PacksManagementPage = () => {
                 {formData.includedFeatures.map((feature, i) => (
                   <li key={i} className="flex items-center justify-between gap-3 px-3 py-2 bg-gray-50 rounded-xl border border-gray-200">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-primary text-xs flex-shrink-0">•</span>
+                      <span className="text-primary text-xs flex-shrink-0">\u2022</span>
                       <span className="text-sm text-dark truncate">{feature}</span>
                     </div>
                     <button
@@ -672,7 +682,6 @@ const PacksManagementPage = () => {
             </p>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" onClick={handleCloseModal} className="flex-1" disabled={uploading}>
               Cancel
@@ -746,7 +755,7 @@ const PacksManagementPage = () => {
                   <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">IRREVERSIBLE</span>
                 </h4>
                 <p className="text-xs text-dark-light mb-3">
-                  <strong className="text-red-600">⚠️</strong> Deletes all data including Cloudinary photos. Cannot be undone.
+                  <strong className="text-red-600">\u26A0\uFE0F</strong> Deletes all data including Cloudinary photos. Cannot be undone.
                 </p>
                 <Button
                   onClick={handlePermanentDeleteConfirm}
@@ -778,5 +787,6 @@ const PacksManagementPage = () => {
     </div>
   );
 };
+
 
 export default PacksManagementPage;
