@@ -306,7 +306,7 @@ const PackDetailPage = () => {
     return min ? (
       <p className="text-white text-2xl font-display font-bold">
         {formatPrice(min)}
-        <span className="text-sm font-normal text-white/60"> / person / 7 night</span>
+        <span className="text-sm font-normal text-white/60"> / person / 7 nights</span>
       </p>
     ) : null;
   })()}

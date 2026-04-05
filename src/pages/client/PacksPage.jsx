@@ -145,7 +145,7 @@ const getRegularPrice7Nights = (pack) => {
             <span className="text-4xl font-display font-bold text-primary">
               {formatPrice(price7n)}
             </span>
-            {' '}<span className="text-sm text-dark/50">/ person / night</span>
+            {' '}<span className="text-sm text-dark/50">/ person / 7 nights</span>
           </p>
         </div>
       </>
