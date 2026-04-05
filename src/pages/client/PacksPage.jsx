@@ -25,15 +25,19 @@ const PacksPage = () => {
     }
   };
 
-  const getFromPrice = (pack) => {
-    const prices = [pack.priceDortoir, pack.priceSingle, pack.priceDouble].filter(Boolean);
-    return prices.length > 0 ? Math.min(...prices) : null;
-  };
+ // ✅ NOUVEAU — utilise les champs minPrice* envoyés par le backend
+const getFromPrice = (pack) => {
+  const prices = [pack.minPriceDortoir, pack.minPriceSingle, pack.minPriceDouble].filter(Boolean);
+  return prices.length > 0 ? Math.min(...prices) : null;
+};
 
-  const getRegularPrice = (pack) => {
-    const prices = [pack.regularPriceDortoir, pack.regularPriceSingle, pack.regularPriceDouble].filter(Boolean);
-    return prices.length > 0 ? Math.min(...prices) : null;
-  };
+const getMinRegularPrice = (pack) => {
+  if (!pack.nightPrices?.length) return null;
+  const prices = pack.nightPrices
+    .filter(np => np.regularPrice)
+    .map(np => Number(np.regularPrice));
+  return prices.length > 0 ? Math.min(...prices) : null;
+};
 
   if (loading) return <Loader />;
 
@@ -64,7 +68,7 @@ const PacksPage = () => {
           <div className="space-y-0">
             {packs.map((pack, index) => {
               const fromPrice = getFromPrice(pack);
-              const regularPrice = getRegularPrice(pack);
+              const regularPrice = getMinRegularPrice(pack);
 
               return (
                 <div key={pack.id}>

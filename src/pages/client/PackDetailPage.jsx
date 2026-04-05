@@ -12,12 +12,17 @@ import { packsAPI } from '../../services/api';
 import { formatPrice } from '../../utils/priceFormatter';
 import { bypassCloudinaryCache } from '../../utils/imageHelper';
 
-const NIGHTS_OPTIONS = Array.from({ length: 8 }, (_, i) => i + 3);
+const availableNights = selectedRoomType
+  ? (pack?.nightPrices ?? [])
+      .filter(np => np.roomType === selectedRoomType)
+      .map(np => np.nights)
+      .sort((a, b) => a - b)
+  : Array.from({ length: 8 }, (_, i) => i + 3);
 
 const ROOM_TYPES = [
-  { key: 'DORTOIR', label: 'Dormitory', priceField: 'priceDortoir', regularField: 'regularPriceDortoir' },
-  { key: 'SINGLE', label: 'Single', priceField: 'priceSingle', regularField: 'regularPriceSingle' },
-  { key: 'DOUBLE', label: 'Double', priceField: 'priceDouble', regularField: 'regularPriceDouble' },
+  { key: 'DORTOIR', label: 'Dormitory' },
+  { key: 'SINGLE',  label: 'Single'    },
+  { key: 'DOUBLE',  label: 'Double'    },
 ];
 
 // ✅ Icône auto selon le nom du service
@@ -66,17 +71,42 @@ const PackDetailPage = () => {
     setCurrentImageIndex(prev => prev === 0 ? pack.photos.length - 1 : prev - 1);
   };
 
-  const getPromoPrice = () => {
-    if (!selectedRoomType || !pack) return null;
-    const rt = ROOM_TYPES.find(r => r.key === selectedRoomType);
-    return rt ? pack[rt.priceField] : null;
-  };
+// ✅ NOUVEAU — lookup dans nightPrices par roomType + nights sélectionnés
+const getNightPriceEntry = (roomType, nights) =>
+  pack?.nightPrices?.find(
+    np => np.roomType === roomType && np.nights === parseInt(nights)
+  ) ?? null;
 
-  const getRegularPrice = () => {
-    if (!selectedRoomType || !pack) return null;
-    const rt = ROOM_TYPES.find(r => r.key === selectedRoomType);
-    return rt ? pack[rt.regularField] : null;
-  };
+const getPromoPrice = () => {
+  if (!selectedRoomType || !selectedNights) return null;
+  return getNightPriceEntry(selectedRoomType, selectedNights)?.promoPrice ?? null;
+};
+
+const getRegularPrice = () => {
+  if (!selectedRoomType || !selectedNights) return null;
+  return getNightPriceEntry(selectedRoomType, selectedNights)?.regularPrice ?? null;
+};
+
+// Prix minimum par room type (pour l'affichage "à partir de")
+const getMinPrice = (roomType) => {
+  if (!pack?.nightPrices) return null;
+  const prices = pack.nightPrices
+    .filter(np => np.roomType === roomType)
+    .map(np => Number(np.promoPrice));
+  return prices.length > 0 ? Math.min(...prices) : null;
+};
+
+const getMinRegularPrice = (roomType) => {
+  if (!pack?.nightPrices) return null;
+  const prices = pack.nightPrices
+    .filter(np => np.roomType === roomType && np.regularPrice)
+    .map(np => Number(np.regularPrice));
+  return prices.length > 0 ? Math.min(...prices) : null;
+};
+
+// Vérifie si un roomType a des prix définis
+const roomTypeHasPrices = (roomType) =>
+  pack?.nightPrices?.some(np => np.roomType === roomType) ?? false;
 
   const totalPrice = selectedRoomType && selectedNights
     ? (getPromoPrice() || 0) * parseInt(selectedNights)
@@ -312,30 +342,51 @@ const PackDetailPage = () => {
               <div className="w-full h-px bg-dark/10" />
 
               {/* Prices per room type */}
-              <div>
-                <p className="text-xs font-bold tracking-[0.25em] text-dark/50 uppercase mb-6">
-                  Prices per night
+              // ✅ NOUVEAU — tableau nuits × room type
+<div>
+  <p className="text-xs font-bold tracking-[0.25em] text-dark/50 uppercase mb-6">
+    Prices per night
+  </p>
+
+  {ROOM_TYPES.filter(rt => roomTypeHasPrices(rt.key)).map(({ key, label }) => {
+    const nightsForType = pack.nightPrices
+      .filter(np => np.roomType === key)
+      .sort((a, b) => a.nights - b.nights);
+
+    return (
+      <div key={key} className="mb-6">
+        {/* Room type header */}
+        <div className="flex items-center gap-2 mb-3">
+          <FaBed className="text-primary/40 text-sm" />
+          <span className="text-sm font-semibold text-dark">{label}</span>
+        </div>
+
+        {/* Nuits grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pl-5">
+          {nightsForType.map(np => (
+            <div
+              key={np.nights}
+              className="bg-white border border-dark/5 rounded-xl px-3 py-2.5 text-center"
+            >
+              <p className="text-[10px] text-dark/40 uppercase tracking-wide mb-1">
+                {np.nights} nights
+              </p>
+              {np.regularPrice && Number(np.regularPrice) > Number(np.promoPrice) && (
+                <p className="text-[10px] text-dark/30 line-through">
+                  {formatPrice(np.regularPrice)}
                 </p>
-                <div className="space-y-0">
-                  {ROOM_TYPES.map(({ key, label, priceField, regularField }) => pack[priceField] && (
-                    <div key={key} className="flex items-center justify-between py-4 border-b border-dark/10 last:border-0">
-                      <div className="flex items-center gap-3">
-                        <FaBed className="text-primary/40 text-sm" />
-                        <span className="text-sm md:text-base text-dark">{label}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {pack[regularField] && pack[regularField] > pack[priceField] && (
-                          <span className="text-xs text-dark/40 line-through">{formatPrice(pack[regularField])}</span>
-                        )}
-                        <span className="text-base font-bold text-primary">
-                          {formatPrice(pack[priceField])}
-                          <span className="text-xs font-normal text-dark/40">/night</span>
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              )}
+              <p className="text-sm font-bold text-primary">
+                {formatPrice(np.promoPrice)}
+              </p>
+              <p className="text-[9px] text-dark/30">/night</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  })}
+</div>
 
             </div>
 
@@ -346,15 +397,18 @@ const PackDetailPage = () => {
                 {/* Card header */}
                 <div className="bg-dark px-6 py-5">
                   <p className="text-white/60 text-xs uppercase tracking-widest mb-1">Starting from</p>
-                  {(() => {
-                    const prices = [pack.priceDortoir, pack.priceSingle, pack.priceDouble].filter(Boolean);
-                    const min = prices.length > 0 ? Math.min(...prices) : null;
-                    return min ? (
-                      <p className="text-white text-2xl font-display font-bold">
-                        {formatPrice(min)}<span className="text-sm font-normal text-white/60"> / night</span>
-                      </p>
-                    ) : null;
-                  })()}
+                  // ✅ NOUVEAU
+{(() => {
+  const prices = [
+    pack.minPriceDortoir, pack.minPriceSingle, pack.minPriceDouble
+  ].filter(Boolean);
+  const min = prices.length > 0 ? Math.min(...prices) : null;
+  return min ? (
+    <p className="text-white text-2xl font-display font-bold">
+      {formatPrice(min)}<span className="text-sm font-normal text-white/60"> / night</span>
+    </p>
+  ) : null;
+})()}
                 </div>
 
                 <div className="p-6 space-y-5">
@@ -363,33 +417,44 @@ const PackDetailPage = () => {
                   <div>
                     <p className="text-xs font-bold tracking-widest text-dark/40 uppercase mb-3">Room type</p>
                     <div className="space-y-2">
-                      {ROOM_TYPES.map(({ key, label, priceField, regularField }) => pack[priceField] && (
-                        <label
-                          key={key}
-                          className={`flex items-center justify-between p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${selectedRoomType === key
-                              ? 'border-primary bg-primary/5'
-                              : 'border-gray-100 hover:border-gray-200 bg-gray-50'
-                            }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selectedRoomType === key ? 'border-primary' : 'border-gray-300'
-                              }`}>
-                              {selectedRoomType === key && (
-                                <div className="w-2 h-2 rounded-full bg-primary" />
-                              )}
-                            </div>
-                            <span className="text-sm font-medium text-dark">{label}</span>
-                          </div>
-                          <div className="text-right">
-                            {pack[regularField] && pack[regularField] > pack[priceField] && (
-                              <div className="text-[10px] text-dark/30 line-through">{formatPrice(pack[regularField])}</div>
-                            )}
-                            <div className="text-sm font-bold text-primary">{formatPrice(pack[priceField])}</div>
-                          </div>
-                          <input type="radio" className="sr-only" name="roomType" value={key}
-                            checked={selectedRoomType === key} onChange={() => setSelectedRoomType(key)} />
-                        </label>
-                      ))}
+              // ✅ NOUVEAU — utilise getMinPrice par roomType
+{ROOM_TYPES.filter(rt => roomTypeHasPrices(rt.key)).map(({ key, label }) => {
+  const minPromo = getMinPrice(key);
+  const minRegular = getMinRegularPrice(key);
+  return (
+    <label
+      key={key}
+      className={`flex items-center justify-between p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+        selectedRoomType === key
+          ? 'border-primary bg-primary/5'
+          : 'border-gray-100 hover:border-gray-200 bg-gray-50'
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+          selectedRoomType === key ? 'border-primary' : 'border-gray-300'
+        }`}>
+          {selectedRoomType === key && <div className="w-2 h-2 rounded-full bg-primary" />}
+        </div>
+        <span className="text-sm font-medium text-dark">{label}</span>
+      </div>
+      <div className="text-right">
+        {minRegular && minRegular > minPromo && (
+          <div className="text-[10px] text-dark/30 line-through">from {formatPrice(minRegular)}</div>
+        )}
+        <div className="text-xs font-bold text-primary">
+          from {formatPrice(minPromo)}
+        </div>
+      </div>
+      <input type="radio" className="sr-only" name="roomType" value={key}
+        checked={selectedRoomType === key} onChange={() => {
+          setSelectedRoomType(key);
+          setSelectedNights(''); // ✅ reset nights quand roomType change
+        }}
+      />
+    </label>
+  );
+})}
                     </div>
                   </div>
 
@@ -402,9 +467,9 @@ const PackDetailPage = () => {
                       className="w-full px-4 py-3.5 border-2 border-gray-100 bg-gray-50 rounded-xl focus:border-primary focus:bg-white focus:outline-none text-sm text-dark transition-colors"
                     >
                       <option value="">Choose duration...</option>
-                      {NIGHTS_OPTIONS.map(n => (
-                        <option key={n} value={n}>{n} nights</option>
-                      ))}
+                     {availableNights.map(n => (
+  <option key={n} value={n}>{n} nights</option>
+))}
                     </select>
                   </div>
 
