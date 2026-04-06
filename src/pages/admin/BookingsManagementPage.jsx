@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FaEye, FaCheck, FaTimes, FaBoxOpen, FaTrash, FaSearch, FaCalendarAlt, FaUser, FaFilter, FaDownload, FaClock, FaUserCheck, FaExclamationTriangle, FaBed } from 'react-icons/fa';
+import { FaEye, FaCheck, FaTimes, FaBoxOpen, FaTrash, FaSearch, FaCalendarAlt, FaUser, FaFilter, FaDownload, FaClock, FaUserCheck, FaExclamationTriangle, FaBed, FaUserFriends } from 'react-icons/fa';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
@@ -341,6 +341,12 @@ const BookingsManagementPage = () => {
                                 Code: {booking.accessCode}
                               </span>
                             </div>
+                            {booking.numberOfPersons > 1 && (
+  <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold">
+    <FaUserFriends className="text-xs" />
+    <span>{booking.numberOfPersons} persons</span>
+  </div>
+)}
                           </div>
                         </div>
                       </td>
@@ -496,6 +502,14 @@ const BookingsManagementPage = () => {
                       <p className="text-[10px] text-green-600 mb-0.5 font-bold uppercase">Access Code</p>
                       <p className="text-xs sm:text-sm font-bold text-green-700">{booking.accessCode}</p>
                     </div>
+                    {booking.numberOfPersons > 1 && (
+  <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 col-span-2">
+    <p className="text-[10px] text-blue-600 mb-0.5 font-bold uppercase">Persons</p>
+    <p className="text-xs sm:text-sm font-bold text-blue-700 flex items-center gap-1">
+      <FaUserFriends /> {booking.numberOfPersons} persons
+    </p>
+  </div>
+)}
                   </div>
 
                   {/* Dates */}
@@ -690,7 +704,26 @@ const BookingsManagementPage = () => {
                 </div>
               </div>
             )}
-
+            {selectedBooking.numberOfPersons > 0 && (
+  <div>
+    <h4 className="font-bold text-dark mb-2 sm:mb-3 text-sm sm:text-base md:text-lg flex items-center gap-2">
+      <FaUserFriends className="text-primary flex-shrink-0" />
+      <span>Number of Persons</span>
+    </h4>
+    <Card className="p-3 sm:p-4 bg-blue-50 border-2 border-blue-200">
+      <div className="flex items-center gap-3">
+        <div className="flex gap-1">
+          {Array.from({ length: selectedBooking.numberOfPersons }).map((_, i) => (
+            <FaUser key={i} className="text-blue-500 text-lg" />
+          ))}
+        </div>
+        <span className="font-bold text-blue-700 text-base sm:text-lg">
+          {selectedBooking.numberOfPersons} person{selectedBooking.numberOfPersons > 1 ? 's' : ''}
+        </span>
+      </div>
+    </Card>
+  </div>
+)}
             {/* Services */}
             {selectedBooking.services && selectedBooking.services.length > 0 && (
               <div>
