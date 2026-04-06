@@ -63,7 +63,7 @@ const PacksManagementPage = () => {
       const res = await packsAPI.getAll();
       setPacks(res.data.data);
     } catch {
-      toast.error('\u274C Error loading packages');
+      toast.error('❌ Error loading packages');
     } finally {
       setLoading(false);
     }
@@ -114,11 +114,11 @@ const PacksManagementPage = () => {
 
     const validNightPrices = formData.nightPrices.filter(np => np.promoPrice !== '');
     if (validNightPrices.length === 0) {
-      toast.error('\u274C Add at least one price for at least one room type!');
+      toast.error('❌ Add at least one price for at least one room type!');
       return;
     }
     if (formData.includedFeatures.length === 0) {
-      toast.error('\u274C Add at least one feature!');
+      toast.error('❌ Add at least one feature!');
       return;
     }
 
@@ -141,7 +141,7 @@ const PacksManagementPage = () => {
               photoUrls.push(res.data.data);
               setUploadProgress({ current: i + 1, total: newFiles.length });
             }
-          } catch { toast.warning(`\u26A0\uFE0F Error uploading photo ${i + 1}`); }
+          } catch { toast.warning(`⚠️ Error uploading photo ${i + 1}`); }
         }
       }
 
@@ -160,16 +160,16 @@ const PacksManagementPage = () => {
 
       if (editingPack) {
         await packsAPI.update(editingPack.id, dataToSend);
-        toast.success('\u2705 Package updated successfully!');
+        toast.success('✅ Package updated successfully!');
       } else {
         await packsAPI.create(dataToSend);
-        toast.success('\u2705 Package created successfully!');
+        toast.success('✅ Package created successfully!');
       }
 
       handleCloseModal();
       fetchData();
     } catch (error) {
-      toast.error(`\u274C ${error.response?.data?.message || 'Error saving package'}`);
+      toast.error(`❌ ${error.response?.data?.message || 'Error saving package'}`);
     } finally {
       setUploading(false);
       setUploadProgress({ current: 0, total: 0 });
@@ -213,9 +213,9 @@ const PacksManagementPage = () => {
     setDeleting(true);
     try {
       await packsAPI.delete(packToDelete.id);
-      toast.success('\u2705 Package deactivated!');
+      toast.success('✅ Package deactivated!');
       setShowDeleteConfirm(false); setPackToDelete(null); fetchData();
-    } catch { toast.error('\u274C Error deactivating'); }
+    } catch { toast.error('❌ Error deactivating'); }
     finally { setDeleting(false); }
   };
 
@@ -225,9 +225,9 @@ const PacksManagementPage = () => {
     setDeleting(true);
     try {
       await packsAPI.deletePermanently(packToDelete.id);
-      toast.success('\uD83D\uDDD1\uFE0F Package deleted permanently!');
+      toast.success('🗑️ Package deleted permanently!');
       setShowDeleteConfirm(false); setPackToDelete(null); fetchData();
-    } catch { toast.error('\u274C Error deleting permanently'); }
+    } catch { toast.error('❌ Error deleting permanently'); }
     finally { setDeleting(false); }
   };
 
@@ -235,8 +235,8 @@ const PacksManagementPage = () => {
   const handleReactivate = async (id) => {
     try {
       await packsAPI.update(id, { isActive: true });
-      toast.success('\u2705 Package reactivated!'); fetchData();
-    } catch { toast.error('\u274C Error reactivating'); }
+      toast.success('✅ Package reactivated!'); fetchData();
+    } catch { toast.error('❌ Error reactivating'); }
   };
 
 
@@ -406,7 +406,7 @@ const PacksManagementPage = () => {
                     <div className="flex flex-wrap gap-1.5">
                       {pack.includedFeatures.slice(0, 3).map((f, i) => (
                         <span key={i} className="text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">
-                          \u2713 {f}
+                          ✓ {f}
                         </span>
                       ))}
                       {pack.includedFeatures.length > 3 && (
@@ -469,7 +469,7 @@ const PacksManagementPage = () => {
 
           <div className="border border-gray-200 rounded-2xl p-5 space-y-4">
             <h3 className="text-sm font-bold text-dark flex items-center gap-2">
-              <span>\uD83D\uDCE6</span> General Information
+              <span>📦</span> General Information
             </h3>
             <div>
               <label className="block text-xs sm:text-sm font-bold text-dark mb-2">Photos</label>
@@ -511,7 +511,7 @@ const PacksManagementPage = () => {
           <div className="border border-gray-200 rounded-2xl p-5 space-y-4">
             <div>
               <h3 className="text-sm font-bold text-dark flex items-center gap-2 mb-1">
-                <span>\uD83D\uDECF\uFE0F</span> Prices per night (3 to 10 nights)
+                <span>🛏️</span> Prices per night (3 to 10 nights)
               </h3>
               <p className="text-[11px] text-dark-light">
                 Leave empty to not offer that duration. Promo = displayed price · Regular = crossed-out price (optional)
@@ -551,10 +551,10 @@ const PacksManagementPage = () => {
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-2 pr-3 text-dark/50 font-semibold w-20">Nights</th>
                     <th className="text-center py-2 px-2 text-dark/50 font-semibold">
-                      Promo Price (\u20AC) <span className="text-red-400">*</span>
+                      Promo Price (€) <span className="text-red-400">*</span>
                     </th>
                     <th className="text-center py-2 pl-2 text-dark/50 font-semibold">
-                      Regular Price (\u20AC) <span className="text-dark/30 font-normal">optional</span>
+                      Regular Price (€) <span className="text-dark/30 font-normal">optional</span>
                     </th>
                   </tr>
                 </thead>
@@ -580,7 +580,7 @@ const PacksManagementPage = () => {
                             min="0"
                             value={entry?.promoPrice || ''}
                             onChange={e => handleNightPriceChange(activePriceTab, n, 'promoPrice', e.target.value)}
-                            placeholder="\u2014"
+                            placeholder="—"
                             className="input w-full text-sm text-center"
                           />
                         </td>
@@ -591,7 +591,7 @@ const PacksManagementPage = () => {
                             min="0"
                             value={entry?.regularPrice || ''}
                             onChange={e => handleNightPriceChange(activePriceTab, n, 'regularPrice', e.target.value)}
-                            placeholder="\u2014"
+                            placeholder="—"
                             className="input w-full text-sm text-center opacity-70"
                           />
                         </td>
@@ -615,7 +615,7 @@ const PacksManagementPage = () => {
 
           <div className="border border-gray-200 rounded-2xl p-5 space-y-3">
             <h3 className="text-sm font-bold text-dark flex items-center gap-2">
-              <span>\u2705</span> What's included
+              <span>✅</span> What's included
             </h3>
 
             {formData.includedFeatures.length === 0 ? (
@@ -625,7 +625,7 @@ const PacksManagementPage = () => {
                 {formData.includedFeatures.map((feature, i) => (
                   <li key={i} className="flex items-center justify-between gap-3 px-3 py-2 bg-gray-50 rounded-xl border border-gray-200">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-primary text-xs flex-shrink-0">\u2022</span>
+                      <span className="text-primary text-xs flex-shrink-0">•</span>
                       <span className="text-sm text-dark truncate">{feature}</span>
                     </div>
                     <button
@@ -755,7 +755,7 @@ const PacksManagementPage = () => {
                   <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">IRREVERSIBLE</span>
                 </h4>
                 <p className="text-xs text-dark-light mb-3">
-                  <strong className="text-red-600">\u26A0\uFE0F</strong> Deletes all data including Cloudinary photos. Cannot be undone.
+                  <strong className="text-red-600">⚠️</strong> Deletes all data including Cloudinary photos. Cannot be undone.
                 </p>
                 <Button
                   onClick={handlePermanentDeleteConfirm}
