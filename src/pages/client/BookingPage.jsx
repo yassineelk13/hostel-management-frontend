@@ -176,10 +176,13 @@ const BookingPage = () => {
     const personsCount = getPersonsCount();
 
     let roomTotal = 0;
-    if (selectedRoom.roomType === 'SINGLE' || selectedRoom.roomType === 'DOUBLE') {
-      // Room price is fixed regardless of persons count
-      roomTotal = selectedRoom.pricePerNight * nights;
-    } else {
+if (selectedRoom.roomType === 'SINGLE' || selectedRoom.roomType === 'DOUBLE') {
+  roomTotal = selectedRoom.pricePerNight * nights;
+  // ✅ Breakfast extra pour 2ème personne en SINGLE
+  if (selectedRoom.roomType === 'SINGLE' && numberOfPersons === 2) {
+    roomTotal += BREAKFAST_EXTRA_PER_PERSON_PER_NIGHT * nights;
+  }
+} else {
       roomTotal = selectedRoom.pricePerNight * nights * personsCount;
     }
 
@@ -261,9 +264,16 @@ const BookingPage = () => {
         });
       }
     } else {
-      if (selectedRoom) {
-        lines.push({ label: `Room (${nights} nights)`, value: formatPrice(selectedRoom.pricePerNight * nights) });
-      }
+  if (selectedRoom) {
+    lines.push({ label: `Room (${nights} nights)`, value: formatPrice(selectedRoom.pricePerNight * nights) });
+  }
+  // ✅ Breakfast extra pour non-pack
+  if (numberOfPersons === 2) {
+    lines.push({
+      label: `🥐 Breakfast 2nd person (${nights} nights × ${formatPrice(BREAKFAST_EXTRA_PER_PERSON_PER_NIGHT)})`,
+      value: formatPrice(BREAKFAST_EXTRA_PER_PERSON_PER_NIGHT * nights)
+    });
+  }
       const perPersonServices = availableServices.filter(s =>
         formData.serviceIds.includes(s.id) && s.pricingType !== 'PER_ROOM'
       );
