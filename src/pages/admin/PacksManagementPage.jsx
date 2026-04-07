@@ -201,6 +201,7 @@ const dataToSend = {
     setFormData({
       name: pack.name,
       description: pack.description || '',
+       extraPersonPricePerNight: pack.extraPersonPricePerNight?.toString() || '',
       nightPrices,
       includedFeatures: pack.includedFeatures || [],
       photos: pack.photos || []
