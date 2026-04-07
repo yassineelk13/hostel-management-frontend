@@ -159,10 +159,12 @@ const BookingPage = () => {
       }
       // SINGLE pack: base price + breakfast extra for 2nd person
       if (packData?.roomType === 'SINGLE') {
-        const basePrice = packData?.totalPrice || 0;
-        const breakfastExtra = BREAKFAST_EXTRA_PER_PERSON_PER_NIGHT * (numberOfPersons - 1) * (packData.nights || 0);
-        return basePrice + breakfastExtra;
-      }
+  const basePrice = packData?.totalPrice || 0;
+  if (numberOfPersons === 1) return basePrice;
+  const breakfastExtra = BREAKFAST_EXTRA_PER_PERSON_PER_NIGHT * (packData.nights || 0);
+  const activitiesExtra = (packData?.extraPersonPricePerNight || 0) * (packData.nights || 0);
+  return basePrice + breakfastExtra + activitiesExtra;
+}
       // DOUBLE: fixed price
       return packData?.totalPrice || 0;
     }
@@ -255,15 +257,22 @@ if (selectedRoom.roomType === 'SINGLE' || selectedRoom.roomType === 'DOUBLE') {
 
     const lines = [];
 
-    if (isPack) {
-      lines.push({ label: 'Pack base price', value: formatPrice(packData.totalPrice) });
-      if (numberOfPersons === 2) {
-        lines.push({
-          label: `Breakfast 2nd person (${nights} nights × ${formatPrice(BREAKFAST_EXTRA_PER_PERSON_PER_NIGHT)})`,
-          value: formatPrice(BREAKFAST_EXTRA_PER_PERSON_PER_NIGHT * nights)
-        });
-      }
-    } else {
+ if (isPack) {
+  lines.push({ label: 'Pack base price', value: formatPrice(packData.totalPrice) });
+  if (numberOfPersons === 2) {
+    lines.push({
+      label: `🥐 Breakfast 2nd person (${nights}n × ${formatPrice(BREAKFAST_EXTRA_PER_PERSON_PER_NIGHT)})`,
+      value: formatPrice(BREAKFAST_EXTRA_PER_PERSON_PER_NIGHT * nights)
+    });
+    // ✅ NEW — activités 2ème personne
+    if ((packData?.extraPersonPricePerNight || 0) > 0) {
+      lines.push({
+        label: `🏄 Activities 2nd person (${nights}n × ${formatPrice(packData.extraPersonPricePerNight)})`,
+        value: formatPrice(packData.extraPersonPricePerNight * nights)
+      });
+    }
+  }
+}else {
   if (selectedRoom) {
     lines.push({ label: `Room (${nights} nights)`, value: formatPrice(selectedRoom.pricePerNight * nights) });
   }

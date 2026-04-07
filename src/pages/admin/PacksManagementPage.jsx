@@ -33,6 +33,7 @@ const initNightPrices = () =>
 const EMPTY_FORM = {
   name: '',
   description: '',
+  extraPersonPricePerNight: '', 
   nightPrices: initNightPrices(),
   includedFeatures: [],
   photos: []
@@ -145,18 +146,23 @@ const PacksManagementPage = () => {
         }
       }
 
-      const dataToSend = {
-        name: formData.name,
-        description: formData.description,
-        nightPrices: validNightPrices.map(np => ({
+
+      // ✅ Remplace par :
+const dataToSend = {
+  name: formData.name,
+  description: formData.description,
+  extraPersonPricePerNight: formData.extraPersonPricePerNight
+    ? parseFloat(formData.extraPersonPricePerNight)
+    : 0,  // ✅ NEW
+     nightPrices: validNightPrices.map(np => ({
           roomType: np.roomType,
           nights: np.nights,
           promoPrice: parseFloat(np.promoPrice),
           regularPrice: np.regularPrice ? parseFloat(np.regularPrice) : null,
         })),
-        includedFeatures: formData.includedFeatures,
-        photos: photoUrls
-      };
+  includedFeatures: formData.includedFeatures,
+  photos: photoUrls
+};
 
       if (editingPack) {
         await packsAPI.update(editingPack.id, dataToSend);
@@ -490,6 +496,34 @@ const PacksManagementPage = () => {
                 placeholder="For those who want a full surf experience..."
                 required
               />
+              {/* ✅ Ajouter après le textarea description, dans la section General Information */}
+<div>
+  <label className="block text-xs sm:text-sm font-bold text-dark mb-2">
+    Extra price per person / night (Single room)
+    <span className="ml-2 text-[10px] font-normal text-dark-light">
+      For 2nd person: surf + yoga + activities (breakfast is added automatically +5€)
+    </span>
+  </label>
+  <div className="relative">
+    <input
+      type="number"
+      step="0.01"
+      min="0"
+      name="extraPersonPricePerNight"
+      value={formData.extraPersonPricePerNight}
+      onChange={handleChange}
+      placeholder="Ex: 45.00"
+      className="input w-full pr-12"
+    />
+    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-dark-light font-bold text-sm">
+      €/night
+    </span>
+  </div>
+  <p className="text-[10px] text-dark-light mt-1 flex items-center gap-1">
+    <span className="text-amber-500">⚠️</span>
+    Leave 0 if the 2nd person has the same price (no extra charge)
+  </p>
+</div>
             </div>
           </div>
 

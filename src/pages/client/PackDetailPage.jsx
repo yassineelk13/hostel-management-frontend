@@ -131,7 +131,8 @@ const PackDetailPage = () => {
         nights: parseInt(selectedNights),
         pricePerNight: getPromoPrice(),
         totalPrice,
-        isPack: true
+        isPack: true,
+        extraPersonPricePerNight: pack.extraPersonPricePerNight || 0
       }
     });
   };
