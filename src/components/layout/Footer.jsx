@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { FaFacebook, FaInstagram, FaWhatsapp, FaEnvelope, FaPhone, FaMapMarkerAlt, FaUserShield, FaClock, FaHeart, FaArrowUp } from 'react-icons/fa';
 import logo from '../../assets/logo.png';
 import { settingsAPI } from '../../services/api';
@@ -237,27 +237,22 @@ const Footer = () => {
           </div>
 
           {/* ✅ Footer Bottom - Responsive + Anglais */}
-          <div className="border-t border-white/10 py-4 sm:py-6">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-3 sm:gap-4">
-              <p className="text-gray-400 text-xs sm:text-sm flex flex-wrap items-center justify-center md:justify-start gap-1 sm:gap-2 text-center md:text-left">
-                <span>&copy; {new Date().getFullYear()} {settings.hostelName || 'Shams House'}.</span>
-                <span>All rights reserved.</span>
-                <span className="hidden md:inline">•</span>
-                <span className="hidden md:inline text-gray-500">Made with</span>
-                <FaHeart className="hidden md:inline text-red-500 text-xs animate-pulse" />
-                <span className="hidden md:inline text-gray-500">in Imsouane</span>
-              </p>
-              
-              <Link 
-                to="/admin/login" 
-                className="group flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg transition-all duration-300 border border-white/10 hover:border-primary/50 flex-shrink-0"
-                title="Admin Access"
-              >
-                <FaUserShield className="text-primary group-hover:scale-110 transition-transform text-xs sm:text-sm" />
-                <span className="text-xs sm:text-sm text-gray-400 group-hover:text-white whitespace-nowrap">Admin</span>
-              </Link>
-            </div>
-          </div>
+          {/* ✅ Footer Bottom */}
+<div className="border-t border-white/10 py-4 sm:py-6">
+  <div className="flex flex-col md:flex-row justify-between items-center gap-3 sm:gap-4">
+    <p
+      onDoubleClick={() => navigate('/admin/login')}
+      className="text-gray-400 text-xs sm:text-sm flex flex-wrap items-center justify-center md:justify-start gap-1 sm:gap-2 text-center md:text-left cursor-default select-none"
+    >
+      <span>&copy; {new Date().getFullYear()} {settings.hostelName || 'Shams House'}.</span>
+      <span>All rights reserved.</span>
+      <span className="hidden md:inline">•</span>
+      <span className="hidden md:inline text-gray-500">Made with</span>
+      <FaHeart className="hidden md:inline text-red-500 text-xs animate-pulse" />
+      <span className="hidden md:inline text-gray-500">in Imsouane</span>
+    </p>
+  </div>
+</div>
         </div>
       </footer>
 
