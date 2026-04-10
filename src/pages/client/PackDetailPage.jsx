@@ -105,7 +105,7 @@ const PackDetailPage = () => {
     pack?.nightPrices?.some(np => np.roomType === roomType) ?? false;
 
   const totalPrice = selectedRoomType && selectedNights
-    ? (getPromoPrice() || 0) * parseInt(selectedNights)
+    ? (getPromoPrice() || 0)   // directement 111€, c'est déjà le total
     : null;
 
   const checkOutDate = checkInDate && selectedNights
@@ -121,20 +121,20 @@ const PackDetailPage = () => {
     if (!selectedNights) { alert('Please select number of nights'); return; }
     if (!checkInDate) { alert('Please select an arrival date'); return; }
 
-    navigate('/booking', {
-      state: {
-        packId: pack.id,
-        packName: pack.name,
-        roomType: selectedRoomType,
-        checkIn: checkInDate,
-        checkOut: checkOutDate,
-        nights: parseInt(selectedNights),
-        pricePerNight: getPromoPrice(),
-        totalPrice,
-        isPack: true,
-        extraPersonPricePerNight: pack.extraPersonPricePerNight || 0
-      }
-    });
+ navigate('/booking', {
+  state: {
+    packId: pack.id,
+    packName: pack.name,
+    roomType: selectedRoomType,
+    checkIn: checkInDate,
+    checkOut: checkOutDate,
+    nights: parseInt(selectedNights),
+    pricePerNight: getPromoPrice() / parseInt(selectedNights), // ✅ 111 / 6 = 18.5€/nuit
+    totalPrice,   // ✅ 111€ total
+    isPack: true,
+    extraPersonPricePerNight: pack.extraPersonPricePerNight || 0
+  }
+});
   };
 
   if (loading) return <Loader />;
