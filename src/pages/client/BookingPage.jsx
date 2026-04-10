@@ -144,7 +144,7 @@ const BookingPage = () => {
     if (!selectedRoom && !isPack) return 1;
     const roomType = selectedRoom?.roomType || packData?.roomType;
     if (roomType === 'DORTOIR') return formData.bedIds.length;
-    if (roomType === 'SINGLE') return numberOfPersons;
+    if (roomType === 'SINGLE' || roomType === 'DOUBLE') return numberOfPersons;
     return 1; // DOUBLE: fixed price, no per-person change
   };
 
@@ -165,8 +165,13 @@ const BookingPage = () => {
   const activitiesExtra = (packData?.extraPersonPricePerNight || 0) * (packData.nights || 0);
   return basePrice + breakfastExtra + activitiesExtra;
 }
-      // DOUBLE: fixed price
-      return packData?.totalPrice || 0;
+      if (packData?.roomType === 'DOUBLE') {
+  const basePrice = packData?.totalPrice || 0;
+  if (numberOfPersons === 1) return basePrice;
+  const breakfastExtra = BREAKFAST_EXTRA_PER_PERSON_PER_NIGHT * (packData.nights || 0);
+  const activitiesExtra = (packData?.extraPersonPricePerNight || 0) * (packData.nights || 0);
+  return basePrice + breakfastExtra + activitiesExtra;
+}
     }
 
     if (!selectedRoom) return 0;
@@ -181,9 +186,9 @@ const BookingPage = () => {
 if (selectedRoom.roomType === 'SINGLE' || selectedRoom.roomType === 'DOUBLE') {
   roomTotal = selectedRoom.pricePerNight * nights;
   // ✅ Breakfast extra pour 2ème personne en SINGLE
-  if (selectedRoom.roomType === 'SINGLE' && numberOfPersons === 2) {
-    roomTotal += BREAKFAST_EXTRA_PER_PERSON_PER_NIGHT * nights;
-  }
+ if ((selectedRoom.roomType === 'SINGLE' || selectedRoom.roomType === 'DOUBLE') && numberOfPersons === 2) {
+  roomTotal += BREAKFAST_EXTRA_PER_PERSON_PER_NIGHT * nights;
+}
 } else {
       roomTotal = selectedRoom.pricePerNight * nights * personsCount;
     }
@@ -218,10 +223,10 @@ if (selectedRoom.roomType === 'SINGLE' || selectedRoom.roomType === 'DOUBLE') {
         packId: isPack ? packData.packId : null,
         // ✅ Send numberOfPersons to backend
         numberOfPersons: roomType === 'DORTOIR'
-          ? formData.bedIds.length
-          : roomType === 'SINGLE'
-          ? numberOfPersons
-          : 1,
+  ? formData.bedIds.length
+  : (roomType === 'SINGLE' || roomType === 'DOUBLE')
+  ? numberOfPersons
+  : 1,
         totalPrice: calculateTotal(),
       };
 
@@ -248,7 +253,7 @@ if (selectedRoom.roomType === 'SINGLE' || selectedRoom.roomType === 'DOUBLE') {
 
   // ✅ Price breakdown for SINGLE rooms
   const getPriceBreakdown = () => {
-    if (currentRoomType !== 'SINGLE') return null;
+    if (currentRoomType !== 'SINGLE' && currentRoomType !== 'DOUBLE') return null;
     const nights = isPack
       ? packData.nights
       : Math.ceil((new Date(formData.checkOutDate) - new Date(formData.checkInDate)) / (1000 * 60 * 60 * 24));
@@ -366,16 +371,16 @@ if (selectedRoom.roomType === 'SINGLE' || selectedRoom.roomType === 'DOUBLE') {
                         {formatPrice(
                           packData?.roomType === 'DORTOIR' && formData.bedIds.length > 0
                             ? (packData.pricePerNight || 0) * packData.nights * formData.bedIds.length
-                            : packData?.roomType === 'SINGLE'
-                            ? calculateTotal()
-                            : packData.totalPrice
+                            : (packData?.roomType === 'SINGLE' || packData?.roomType === 'DOUBLE')
+  ? calculateTotal()
+  : packData.totalPrice
                         )}
                         {packData?.roomType === 'DORTOIR' && formData.bedIds.length > 1 && (
                           <span className="text-xs font-normal text-primary/60 ml-1">
                             ({formData.bedIds.length} beds)
                           </span>
                         )}
-                        {packData?.roomType === 'SINGLE' && numberOfPersons === 2 && (
+                        {(packData?.roomType === 'SINGLE' || packData?.roomType === 'DOUBLE') && numberOfPersons === 2 &&  (
                           <span className="text-xs font-normal text-primary/60 ml-1">(2 persons)</span>
                         )}
                       </span>
@@ -748,24 +753,65 @@ if (selectedRoom.roomType === 'SINGLE' || selectedRoom.roomType === 'DOUBLE') {
                     </div>
                   )}
 
-                  {/* DOUBLE: full room reserved (no person selector) */}
-                  {selectedRoom?.roomType === 'DOUBLE' && (
-                    <div className="p-4 sm:p-5 bg-green-50 rounded-xl border-2 border-green-200">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-green-100 rounded-xl flex-shrink-0">
-                          <FaBed className="text-green-600 text-xl" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-dark text-sm sm:text-base">Full room reserved</p>
-                          <p className="text-xs sm:text-sm text-dark-light">
-                            You are booking the entire room
-                            ({selectedRoom.beds?.length || 0} bed{selectedRoom.beds?.length !== 1 ? 's' : ''} included)
-                          </p>
-                        </div>
-                        <FaCheckCircle className="text-green-500 text-xl flex-shrink-0" />
-                      </div>
-                    </div>
-                  )}
+                 {/* DOUBLE: full room + persons selector */}
+{selectedRoom?.roomType === 'DOUBLE' && (
+  <div className="space-y-4">
+    <div className="p-4 sm:p-5 bg-green-50 rounded-xl border-2 border-green-200">
+      <div className="flex items-center gap-3">
+        <div className="p-2 bg-green-100 rounded-xl flex-shrink-0">
+          <FaBed className="text-green-600 text-xl" />
+        </div>
+        <div className="flex-1">
+          <p className="font-semibold text-dark text-sm sm:text-base">Full room reserved</p>
+          <p className="text-xs sm:text-sm text-dark-light">
+            You are booking the entire room
+            ({selectedRoom.beds?.length || 0} bed{selectedRoom.beds?.length !== 1 ? 's' : ''} included)
+          </p>
+        </div>
+        <FaCheckCircle className="text-green-500 text-xl flex-shrink-0" />
+      </div>
+    </div>
+
+    {/* ✅ Persons selector — même que SINGLE */}
+    <div className="p-4 sm:p-5 bg-blue-50 rounded-xl border-2 border-blue-200">
+      <label className="block text-sm sm:text-base font-semibold text-dark mb-3 flex items-center gap-2">
+        <FaUserFriends className="text-blue-600 flex-shrink-0" />
+        How many persons?
+        <span className="text-red-500">*</span>
+      </label>
+      <div className="flex gap-3">
+        {[1, 2].map(n => (
+          <button
+            key={n}
+            type="button"
+            onClick={() => setNumberOfPersons(n)}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 sm:py-4 rounded-xl border-2 font-bold text-sm sm:text-base transition-all duration-200 ${
+              numberOfPersons === n
+                ? 'border-blue-500 bg-blue-500 text-white shadow-lg scale-105'
+                : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50 text-dark'
+            }`}
+          >
+            <FaUserFriends className="flex-shrink-0" />
+            {n} person{n > 1 ? 's' : ''}
+          </button>
+        ))}
+      </div>
+      {numberOfPersons === 2 && (
+        <div className="mt-3 p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs sm:text-sm text-amber-800 space-y-1">
+          <p className="font-semibold flex items-center gap-1.5">
+            <FaCheckCircle className="text-amber-600 flex-shrink-0" />
+            Pricing adjusted for 2 persons:
+          </p>
+          <ul className="ml-5 space-y-0.5 list-disc text-amber-700">
+            <li>Activity services (surf, yoga...) will be charged ×2</li>
+            <li>Transport: unchanged (per room)</li>
+            {isPack && <li>Breakfast: +{formatPrice(BREAKFAST_EXTRA_PER_PERSON_PER_NIGHT)}/night for the 2nd person</li>}
+          </ul>
+        </div>
+      )}
+    </div>
+  </div>
+)}
 
                   {/* Services (hidden for packs) */}
                   {!isPack && availableServices.length > 0 && (
@@ -889,7 +935,7 @@ if (selectedRoom.roomType === 'SINGLE' || selectedRoom.roomType === 'DOUBLE') {
                   {/* Total */}
                   <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-2 border-primary/30 p-4 sm:p-6">
                     {/* ✅ Price breakdown for SINGLE + 2 persons */}
-                    {currentRoomType === 'SINGLE' && numberOfPersons === 2 && getPriceBreakdown() && (
+                    {(currentRoomType === 'SINGLE' || currentRoomType === 'DOUBLE') && numberOfPersons === 2 && getPriceBreakdown() && (
                       <div className="mb-4 pb-4 border-b border-primary/20 space-y-2">
                         <p className="text-xs font-bold text-dark/60 uppercase tracking-wider mb-2">Price breakdown</p>
                         {getPriceBreakdown().map((line, i) => (

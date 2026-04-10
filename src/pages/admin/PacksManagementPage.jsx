@@ -499,12 +499,12 @@ const dataToSend = {
               />
               {/* ✅ Ajouter après le textarea description, dans la section General Information */}
 <div>
-  <label className="block text-xs sm:text-sm font-bold text-dark mb-2">
-    Extra price per person / night (Single room)
-    <span className="ml-2 text-[10px] font-normal text-dark-light">
-      For 2nd person: surf + yoga + activities (breakfast is added automatically +5€)
-    </span>
-  </label>
+ <label className="block text-xs sm:text-sm font-bold text-dark mb-2">
+  Extra price per person / night (Single & Double room)
+  <span className="ml-2 text-[10px] font-normal text-dark-light">
+    For 2nd person: surf + yoga + activities (breakfast is added automatically +5€)
+  </span>
+</label>
   <div className="relative">
     <input
       type="number"
